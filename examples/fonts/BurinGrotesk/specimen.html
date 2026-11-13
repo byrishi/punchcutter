@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Burin Grotesk specimen</title>
+<style>
+@font-face {
+  font-family: "Burin Grotesk";
+  src: url("webfonts/BurinGrotesk[wght].woff2") format("woff2-variations"), url("webfonts/BurinGrotesk[wght].woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root{--bg:#f6f4ef;--fg:#141414;--mute:#8a867d;--line:#d9d5cb;--acc:#e5482d}
+@media(prefers-color-scheme:dark){:root{--bg:#121212;--fg:#f1efe9;--mute:#8f8b82;--line:#2c2b28}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:"Burin Grotesk",system-ui,sans-serif;font-weight:400}
+main{max-width:1180px;margin:0 auto;padding:6vw 5vw 10vw}
+.k{font:500 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0 0 18px}
+section{border-top:1px solid var(--line);padding:44px 0}
+h1{font-size:clamp(64px,15vw,220px);line-height:.9;margin:0 0 28px;font-weight:800;letter-spacing:-.02em;overflow-wrap:anywhere}
+.lede{font-size:clamp(20px,2.6vw,34px);line-height:1.3;max-width:26em;margin:0}
+.w{display:flex;align-items:baseline;gap:24px;border-bottom:1px solid var(--line);padding:10px 0;overflow:hidden;white-space:nowrap}
+.w span{font:500 12px/1 ui-monospace,monospace;color:var(--mute);width:110px;flex:none}.w b{font-size:clamp(30px,6vw,72px);font-weight:inherit}
+#try{font-size:clamp(40px,9vw,128px);line-height:1.02;outline:none;min-height:1.1em;overflow-wrap:anywhere}
+.ctl{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;font:500 13px/1 ui-monospace,monospace;color:var(--mute);margin-bottom:26px}
+.ctl label{display:flex;gap:8px;align-items:center}input[type=range]{accent-color:var(--acc);width:180px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:36px}.cols p{margin:0;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.grid div{aspect-ratio:1;display:grid;place-items:center;font-size:30px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.grid div:hover{background:var(--fg);color:var(--bg)}
+footer{font:500 12px/1.6 ui-monospace,monospace;color:var(--mute);border-top:1px solid var(--line);padding-top:24px}
+</style></head><body><main>
+<p class="k">Burin Grotesk / 277 glyphs / 5 weights + variable</p>
+<h1>Burin Grotesk</h1>
+<p class="lede">A calm neo-grotesque for interfaces and editorial work. Closed apertures, flat terminals, a tall x-height.</p>
+<section><p class="k">Type tester</p>
+<div class="ctl"><label>weight <input id="wght" type="range" min="300" max="800" value="400"> <span id="wv">400</span></label>
+<label><input type="checkbox" data-f="ss01"> alternate a</label><label><input type="checkbox" data-f="tnum"> tabular figures</label>
+<label><input type="checkbox" data-f="zero"> slashed zero</label><label><input type="checkbox" data-f="case"> case-sensitive forms</label></div>
+<div id="try" contenteditable spellcheck="false">Quick wafting zephyrs vex bold Jim 0123456789</div></section>
+<section><p class="k">Weights</p><div class="w" style="font-weight:300"><span>Light 300</span><b>Hamburgefonstiv</b></div><div class="w" style="font-weight:400"><span>Regular 400</span><b>Hamburgefonstiv</b></div><div class="w" style="font-weight:500"><span>Medium 500</span><b>Hamburgefonstiv</b></div><div class="w" style="font-weight:700"><span>Bold 700</span><b>Hamburgefonstiv</b></div><div class="w" style="font-weight:800"><span>ExtraBold 800</span><b>Hamburgefonstiv</b></div></section>
+<section><p class="k">Text</p><div class="cols">
+<p style="font-size:22px">Type is the clothing words wear. A good typeface disappears while you read and leaves only the voice of the writer. Spacing is half of that work: the white between letters must feel as even as the black of the strokes, so a line of text keeps one steady rhythm from the first word to the last.</p><p style="font-size:17px">Type is the clothing words wear. A good typeface disappears while you read and leaves only the voice of the writer. Spacing is half of that work: the white between letters must feel as even as the black of the strokes, so a line of text keeps one steady rhythm from the first word to the last.</p><p style="font-size:14px">Type is the clothing words wear. A good typeface disappears while you read and leaves only the voice of the writer. Spacing is half of that work: the white between letters must feel as even as the black of the strokes, so a line of text keeps one steady rhythm from the first word to the last.</p></div></section>
+<section><p class="k">Glyphs</p><div class="grid"><div>!</div><div>&quot;</div><div>#</div><div>$</div><div>%</div><div>&amp;</div><div>&#x27;</div><div>(</div><div>)</div><div>*</div><div>+</div><div>,</div><div>-</div><div>.</div><div>/</div><div>0</div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>:</div><div>;</div><div>&lt;</div><div>=</div><div>&gt;</div><div>?</div><div>@</div><div>A</div><div>B</div><div>C</div><div>D</div><div>E</div><div>F</div><div>G</div><div>H</div><div>I</div><div>J</div><div>K</div><div>L</div><div>M</div><div>N</div><div>O</div><div>P</div><div>Q</div><div>R</div><div>S</div><div>T</div><div>U</div><div>V</div><div>W</div><div>X</div><div>Y</div><div>Z</div><div>[</div><div>\</div><div>]</div><div>^</div><div>_</div><div>`</div><div>a</div><div>b</div><div>c</div><div>d</div><div>e</div><div>f</div><div>g</div><div>h</div><div>i</div><div>j</div><div>k</div><div>l</div><div>m</div><div>n</div><div>o</div><div>p</div><div>q</div><div>r</div><div>s</div><div>t</div><div>u</div><div>v</div><div>w</div><div>x</div><div>y</div><div>z</div><div>{</div><div>|</div><div>}</div><div>~</div><div>¡</div><div>¢</div><div>£</div><div>¥</div><div>¨</div><div>©</div><div>«</div><div>®</div><div>¯</div><div>°</div><div>´</div><div>·</div><div>¸</div><div>»</div><div>¿</div><div>À</div><div>Á</div><div>Â</div><div>Ã</div><div>Ä</div><div>Å</div><div>Æ</div><div>Ç</div><div>È</div><div>É</div><div>Ê</div><div>Ë</div><div>Ì</div><div>Í</div><div>Î</div><div>Ï</div><div>Ð</div><div>Ñ</div><div>Ò</div><div>Ó</div><div>Ô</div><div>Õ</div><div>Ö</div><div>×</div><div>Ø</div><div>Ù</div><div>Ú</div><div>Û</div><div>Ü</div><div>Ý</div><div>Þ</div><div>ß</div><div>à</div><div>á</div><div>â</div><div>ã</div><div>ä</div><div>å</div><div>æ</div><div>ç</div><div>è</div><div>é</div><div>ê</div><div>ë</div><div>ì</div><div>í</div><div>î</div><div>ï</div><div>ð</div><div>ñ</div><div>ò</div><div>ó</div><div>ô</div><div>õ</div><div>ö</div><div>÷</div><div>ø</div><div>ù</div><div>ú</div><div>û</div><div>ü</div><div>ý</div><div>þ</div><div>ÿ</div><div>Ā</div><div>ā</div><div>Ć</div><div>ć</div><div>Ĉ</div><div>ĉ</div><div>Ċ</div><div>ċ</div><div>Č</div><div>č</div><div>Ď</div><div>Ē</div><div>ē</div><div>Ė</div><div>ė</div><div>Ě</div><div>ě</div><div>Ĝ</div><div>ĝ</div><div>Ġ</div><div>ġ</div><div>Ĥ</div><div>ĥ</div><div>Ĩ</div><div>ĩ</div><div>Ī</div><div>ī</div><div>İ</div><div>ı</div><div>Ĵ</div><div>ĵ</div><div>Ĺ</div><div>ĺ</div><div>Ł</div><div>ł</div><div>Ń</div><div>ń</div><div>Ň</div><div>ň</div><div>Ō</div><div>ō</div><div>Œ</div><div>œ</div><div>Ŕ</div><div>ŕ</div><div>Ř</div><div>ř</div><div>Ś</div><div>ś</div><div>Ŝ</div><div>ŝ</div><div>Ş</div><div>ş</div><div>Š</div><div>š</div><div>Ţ</div><div>ţ</div><div>Ť</div><div>Ũ</div><div>ũ</div><div>Ū</div><div>ū</div><div>Ů</div><div>ů</div><div>Ŵ</div><div>ŵ</div><div>Ŷ</div><div>ŷ</div><div>Ÿ</div><div>Ź</div><div>ź</div><div>Ż</div><div>ż</div><div>Ž</div><div>ž</div><div>ȷ</div><div>ˆ</div><div>ˇ</div><div>˙</div><div>˚</div><div>˜</div><div>Ẁ</div><div>ẁ</div><div>Ẃ</div><div>ẃ</div><div>Ẅ</div><div>ẅ</div><div>Ỳ</div><div>ỳ</div><div>–</div><div>—</div><div>‘</div><div>’</div><div>‚</div><div>“</div><div>”</div><div>„</div><div>•</div><div>…</div><div>‹</div><div>›</div><div>€</div><div>™</div><div>−</div></div></section>
+<footer>Burin Grotesk v1.000. Designed by Punchcutter Cut with Punchcutter.</footer>
+</main><script>
+const t=document.getElementById('try'),on=new Set();
+document.querySelectorAll('[data-f]').forEach(c=>c.onchange=()=>{c.checked?on.add(c.dataset.f):on.delete(c.dataset.f);
+t.style.fontFeatureSettings=[...on].map(f=>'"'+f+'"').join(',')||'normal'});
+const s=document.getElementById('wght');if(s)s.oninput=()=>{t.style.fontWeight=s.value;document.getElementById('wv').textContent=s.value};
+</script></body></html>

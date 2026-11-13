@@ -1,0 +1,11 @@
+{
+  "family": "Burin Grotesk",
+  "version": "1.000",
+  "designer": "Punchcutter",
+  "description": "A calm neo-grotesque for interfaces and editorial work. Closed apertures, flat terminals, a tall x-height.",
+  "license": "SIL Open Font License 1.1",
+  "license_url": "https://openfontlicense.org",
+  "preset": "grotesque",
+  "weights": [300, 400, 500, 700, 800],
+  "design": {"spacing": 0.98}
+}

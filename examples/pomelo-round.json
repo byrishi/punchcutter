@@ -1,0 +1,12 @@
+{
+  "family": "Pomelo Round",
+  "version": "1.000",
+  "designer": "Punchcutter",
+  "description": "A soft, friendly rounded sans for packaging, apps for kids and anything that should smile.",
+  "license": "SIL Open Font License 1.1",
+  "license_url": "https://openfontlicense.org",
+  "preset": "rounded",
+  "weights": [400, 700],
+  "glyphs": "pomelo_glyphs.py",
+  "design": {"stem": 96, "xh": 520, "o_ratio": 1.0, "roundness": 0.6, "aperture": 0.65}
+}

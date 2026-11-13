@@ -1,0 +1,11 @@
+{
+  "family": "Quarry Slab",
+  "version": "1.000",
+  "designer": "Punchcutter",
+  "description": "A sturdy slab serif with low contrast. Built for headlines, labels and anything stamped or printed.",
+  "license": "SIL Open Font License 1.1",
+  "license_url": "https://openfontlicense.org",
+  "preset": "slab",
+  "weights": [400, 700],
+  "design": {}
+}
