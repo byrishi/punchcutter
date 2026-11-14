@@ -702,8 +702,90 @@ def Eth(g):
     g.bar(0, T * 2.6, g.cap * 0.52, wm=0.85, cap0="butt", cap1="butt")
 
 
+# ---------------------------------------------------------------- more marks: Central European, Baltic, Turkish, Romanian
+@glyph("breve", 0x2D8, "accent")
+def breve(g):
+    y = _ay(g) + g.xh * 0.02
+    w = g.xh * 0.2
+    st = g.P(0.78).m(-w, y + g.xh * 0.19, "S").c(0, y, "E").c(w, y + g.xh * 0.19, "N")
+    g.add(st, "butt", "butt")
+
+
+@glyph("hungarumlaut", 0x2DD, "accent")
+def hungarumlaut(g):
+    y = _ay(g)
+    for dx in (-g.xh * 0.12, g.xh * 0.12):
+        g.add(g.P(0.8).m(dx + g.xh * 0.11, y + g.xh * 0.25).l(dx - g.xh * 0.06, y), "butt", "butt")
+
+
+@glyph("ogonek", 0x2DB, "accent")
+def ogonek(g):
+    xh = g.xh
+    st = g.P(0.72).m(0, g.h * 0.5, "S").c(-xh * 0.13, -xh * 0.17, "S", k=0.62).c(xh * 0.05, -xh * 0.33, "E").l(xh * 0.15, -xh * 0.33)
+    g.add(st, "butt")
+
+
+@glyph("commaaccentcomb", 0x326, "accent")
+def commaaccentcomb(g):
+    d = g.T * 0.9
+    y = -g.xh * 0.1 - d / 2
+    g.dot(0, y, d)
+    g.add(g.P(0.62).m(d * 0.32, y, "S").c(-d * 0.3, y - g.xh * 0.2, 240), "butt")
+
+
+@glyph("commaturnedabove", 0x312, "accent")
+def commaturnedabove(g):
+    d = g.T * 0.9
+    y = _ay(g) + g.xh * 0.06 + d / 2
+    g.dot(0, y, d)
+    g.add(g.P(0.62).m(-d * 0.32, y, "N").c(d * 0.3, y + g.xh * 0.2, 60), "butt")
+
+
+@glyph("dotbelowcomb", 0x323, "accent")
+def dotbelowcomb(g):
+    d = g.dotd
+    g.dot(0, -g.xh * 0.12 - d / 2, d)
+
+
+@glyph("caronvert", None, "accent")
+def caronvert(g):
+    """The apostrophe-like caron of d', l', t', L' (Czech, Slovak)."""
+    d = g.T * 0.9
+    g.add(g.P(0.7).m(g.xh * 0.04, 0, "S").l(-g.xh * 0.03, -g.xh * 0.2), "round", "butt")
+
+
+@glyph("dcroat", 0x111)
+def dcroat(g):
+    L.d(g)
+    T, w = g.T, L._bw(g)
+    g.bar(w - T * 2.1, w + T * 0.55, g.xh + (g.asc - g.xh) * 0.48, wm=0.8, cap0="butt", cap1="butt")
+
+
+@glyph("Dcroat", 0x110, "uc")
+def Dcroat(g):
+    Eth(g)
+
+
+@glyph("hbar", 0x127)
+def hbar(g):
+    T = g.T
+    cons = g.sandbox(L.hh)
+    g.shape.contours.extend(cons)
+    g.bar(-T * 0.45, T * 2.1, g.xh + (g.asc - g.xh) * 0.55, wm=0.8, cap0="butt", cap1="butt")
+
+
+@glyph("Hbar", 0x126, "uc")
+def Hbar(g):
+    T = g.T
+    L.H(g)
+    g.bar(-T * 0.3, g.Hw + T * 0.3, g.cap * 0.76, wm=0.75, cap0="butt", cap1="butt")
+
+
+
 # accent table used by the composite builder: combining mark -> accent glyph
 MARKS = {
     0x300: "grave", 0x301: "acute", 0x302: "circumflex", 0x303: "tilde", 0x308: "dieresis",
     0x30A: "ring", 0x30C: "caron", 0x327: "cedilla", 0x304: "macron", 0x307: "dotaccent",
+    0x306: "breve", 0x30B: "hungarumlaut", 0x328: "ogonek", 0x326: "commaaccentcomb", 0x323: "dotbelowcomb",
 }
+BELOW = {"cedilla", "ogonek", "commaaccentcomb", "dotbelowcomb"}

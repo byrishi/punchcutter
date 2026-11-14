@@ -49,8 +49,14 @@ def bounds(contours):
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def sidebearings(contours, zone, target, depth):
-    """Return (shift, advance): how far to move the outline and its width."""
+def sidebearings(contours, zone, target, depth, optical=0.5):
+    """Return (shift, advance): how far to move the outline and its width.
+
+    optical is how much of the measured white a side gives back. A type
+    designer gives a round side about two thirds of a straight side's
+    sidebearing, not the full difference in white, or rounds crowd their
+    neighbours (bc, ck, eo). 0.5 lands there for most designs.
+    """
     ys = np.arange(zone[0] + 5.5, zone[1], 10.0)
     if len(ys) < 2:
         ys = np.array([zone[0] + 1.0, zone[0] + 2.0])
@@ -61,7 +67,8 @@ def sidebearings(contours, zone, target, depth):
     xmin, xmax = np.nanmin(lo), np.nanmax(hi)
     ml = np.where(np.isnan(lo), depth, np.minimum(lo - xmin, depth))
     mr = np.where(np.isnan(hi), depth, np.minimum(xmax - hi, depth))
-    lsb, rsb = target - ml.mean(), target - mr.mean()
+    lsb, rsb = target - optical * ml.mean(), target - optical * mr.mean()
+    lsb, rsb = max(lsb, target * 0.38), max(rsb, target * 0.38)
     shift = lsb - xmin
     return float(shift), float((xmax + shift) + rsb)
 

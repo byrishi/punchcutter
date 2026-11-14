@@ -12,7 +12,7 @@ PRESETS = {
                      aperture=0.9, cut="perp", contrast=0.16, hratio=0.9, dot="round", asc=750),
     # Soft and friendly: round stroke ends, generous curves.
     "rounded": dict(o_ratio=1.0, n_ratio=0.9, roundness=0.58, branch=0.6, join=0.8, aperture=0.5, cut="perp",
-                    terminal="round", dot="round", contrast=0.0, hratio=0.96, a="single", spacing=1.04),
+                    terminal="round", dot="round", contrast=0.0, hratio=0.96, a="single", spacing=1.04, soften=0.32),
     # Sturdy slab serif with low contrast.
     "slab": dict(xh=500, o_ratio=0.98, n_ratio=0.92, roundness=0.58, branch=0.64, join=0.72, aperture=0.3, cut="v",
                  serif="slab", contrast=0.04, hratio=0.86, dot="round", spacing=0.9, H_ratio=0.78),
@@ -25,7 +25,7 @@ PRESETS = {
                       dot="square", spacing=1.2, weight_comp=0.75),
     # High contrast sans for display sizes: thin horizontals, fashion feel.
     "contrast": dict(xh=480, o_ratio=1.0, n_ratio=0.88, O_ratio=1.06, roundness=0.56, branch=0.6, join=0.55,
-                     aperture=0.6, cut="v", contrast=0.55, hratio=0.9, dot="round", asc=760),
+                     aperture=0.6, cut="v", contrast=0.55, hratio=0.9, dot="round", asc=760, soften=0.04),
 }
 
 # Stem multiplier per weight class, relative to Regular (400).

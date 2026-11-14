@@ -299,6 +299,16 @@ def segment(path, out_dir):
     return contact, len(out), len(lines)
 
 
+# typical heights of symbols in a 1000-unit em, for lines with no letters to measure
+SYM_H = {"(": 900, ")": 900, "[": 900, "]": 900, "{": 900, "}": 900, "|": 960, "\\": 760, "/": 760,
+         "$": 820, "\u20ac": 710, "\u00a3": 710, "@": 740, "#": 700, "&": 720, "?": 710, "!": 710, ":": 480}
+ON_BASE = ".!?:@#&%/$\u20ac\u00a3<>|\\"
+
+
+def _base_at(base0, slope, curve, x):
+    return float(np.polyval(curve, x)) if curve is not None else base0 + slope * x
+
+
 def read_labeled(seg_dir, labels, log=print):
     """labels: {"1": "H", "2": "e", ...} or a string with one character per box in reading order."""
     import cv2
@@ -306,6 +316,13 @@ def read_labeled(seg_dir, labels, log=print):
         seg = json.load(f)
     lab = np.load(os.path.join(seg_dir, "labels.npy"))
     boxes = {b["n"]: b for b in seg["boxes"]}
+    soft = None
+    ph = os.path.join(seg_dir, "photo.png")
+    if os.path.exists(ph):
+        img = cv2.imread(ph)
+        if img is not None and img.shape[:2] == lab.shape:
+            flat = _flatten(img.min(axis=2), max(img.shape[:2]) / 25)
+            soft = np.clip((0.82 - flat) / 0.44, 0.0, 1.0).astype(np.float32)
     if isinstance(labels, str):
         chars = [c for c in labels if not c.isspace()]
         labels = {str(i + 1): c for i, c in enumerate(chars)}
@@ -315,9 +332,14 @@ def read_labeled(seg_dir, labels, log=print):
             continue
         b = boxes[int(k)]
         by_line.setdefault(b["line"], []).append((ch, b))
-    samples, seen = [], set()
+    # pass 1: baseline, slope and scale for every line. A line with no letters
+    # to measure (punctuation, symbols) borrows the scale of the lettered lines,
+    # so a colon is as big as the writer made it, not stretched to cap height.
+    geo = {}
     for li, items in by_line.items():
         flat = [((b["x0"] + b["x1"]) / 2, b["y1"]) for ch, b in items if ch.isalnum() and ch not in DESC and ch not in "Q"]
+        if not flat:   # symbols only: trust the marks that sit on the baseline
+            flat = [((b["x0"] + b["x1"]) / 2, b["y1"]) for ch, b in items if ch in ON_BASE]
         if not flat:
             flat = [((b["x0"] + b["x1"]) / 2, b["y1"]) for ch, b in items]
         xs = np.array([p[0] for p in flat])
@@ -327,24 +349,53 @@ def read_labeled(seg_dir, labels, log=print):
             slope = float(np.polyfit(xs, ys, 1)[0])
             slope = max(min(slope, 0.25), -0.25)
         base0 = float(np.median(ys - slope * xs))
-        xh_tops = [base0 + slope * (b["x0"] + b["x1"]) / 2 - b["y0"] for ch, b in items if ch in "acemnorsuvwxz"]
+        curve = None
+        if len(flat) >= 7 and np.ptp(xs) > 0:      # a curled page or a phone held at an angle bends the line
+            c2 = np.polyfit(xs, ys, 2)
+            r1 = np.abs(ys - (base0 + slope * xs))
+            r2 = np.abs(ys - np.polyval(c2, xs))
+            if np.median(r2) < np.median(r1) * 0.7:
+                curve = c2
+        xh_tops = [_base_at(base0, slope, curve, (b["x0"] + b["x1"]) / 2) - b["y0"] for ch, b in items if ch in "acemnorsuvwxz"]
         caps = [b["y1"] - b["y0"] for ch, b in items if ch in "ABDEFHIKLMNPRTUVWXYZ0123456789"]
+        units = None
+        syms = [SYM_H[ch] / max(b["y1"] - b["y0"], 1) for ch, b in items if ch in SYM_H]
         if xh_tops:
             units = 500.0 / max(float(np.median(xh_tops)), 1.0)
         elif caps:
             units = 700.0 / max(float(np.median(caps)), 1.0)
-        else:
-            units = 700.0 / max(float(np.median([b["y1"] - b["y0"] for _, b in items])), 1.0)
+        elif syms:   # symbols only: size them as type, not as large as they were scribbled
+            units = float(np.median(syms))
+        if not any(ch.isalnum() or ch in ON_BASE for ch, _ in items):
+            base0 = None      # nothing on this line sits on a baseline
+        geo[li] = [base0, slope, units, curve]
+    known = [g[2] for g in geo.values() if g[2]]
+    for li, g in geo.items():
+        if g[2] is None:
+            g[2] = float(np.median(known)) if known else 700.0 / max(float(np.median([b["y1"] - b["y0"] for _, b in by_line[li]])), 1.0)
+        if g[0] is None:
+            g[0] = float(max(b["y1"] for _, b in by_line[li]))
+    samples, seen = [], set()
+    for li, items in by_line.items():
+        base0, slope, units, curve = geo[li]
         for ch, b in items:
             if ch in seen:
                 continue
             seen.add(ch)
-            base = base0 + slope * (b["x0"] + b["x1"]) / 2
+            base = _base_at(base0, slope, curve, (b["x0"] + b["x1"]) / 2)
             m = 4
             y0, y1, x0, x1 = max(b["y0"] - m, 0), b["y1"] + m, max(b["x0"] - m, 0), b["x1"] + m
-            crop = np.isin(lab[y0:y1, x0:x1], b["ids"]).astype(np.float32)
+            hard = np.isin(lab[y0:y1, x0:x1], b["ids"]).astype(np.uint8)
+            # trace the ink's own soft edge, not the thresholded pixels, so a
+            # thin pen line comes out smooth instead of stair-stepped
+            near = cv2.dilate(hard, np.ones((5, 5), np.uint8)).astype(np.float32)
+            crop = soft[y0:y1, x0:x1] * near if soft is not None else hard.astype(np.float32)
+            if soft is not None and hard.any():
+                # a lighter stroke (pressure eased off) still counts as a full stroke
+                crop = np.clip(crop / max(float(np.percentile(crop[hard > 0], 60)), 0.35), 0.0, 1.0)
+                crop = np.maximum(crop, hard * 0.75)
             big = cv2.resize(crop, None, fx=UP * 2, fy=UP * 2, interpolation=cv2.INTER_CUBIC)
-            big = cv2.GaussianBlur(big, (0, 0), UP * 1.3)
+            big = cv2.GaussianBlur(big, (0, 0), UP * 1.6)
             mask = big > 0.5
             f = UP * 2
             samples.append(dict(char=ch, mask=mask, scale=units / f, ox=0.0, oy=(base - y0) * f))
@@ -453,7 +504,7 @@ def trace_mask(mask, scale, ox, oy):
     pad = 4
     m = np.pad(mask, pad)
     path = potrace.Bitmap(~m).trace(turdsize=int(max(8, m.shape[0] * 0.02) ** 2 / 8), alphamax=1.05,
-                                    opticurve=True, opttolerance=0.25)
+                                    opticurve=True, opttolerance=0.5)
 
     def T(p):
         return ((p.x - pad - ox) * scale, (oy - (p.y - pad)) * scale)

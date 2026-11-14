@@ -91,17 +91,20 @@ def _e(g, x0=0.0):
     w = g.ow * 0.96
     cx, cy = x0 + w / 2, xh / 2
     rx, ry = w / 2 - T / 2, (xh + 2 * os) / 2 - h / 2
-    yb = xh * 0.5
+    heavy = min(max((T - 100) / 80, 0.0), 1.0)
+    yb = xh * (0.5 + 0.035 * heavy)          # a heavier e lifts its bar to keep the eye open
+    wb = 0.95 - 0.22 * heavy                 # and thins it
     import math
     ext = 0.0 if g.spec["cut"] == "h" else T * 0.36
-    need = (cy - (yb - h / 2 - max(h * 0.8, 24) - ext)) / ry
+    gap = max(h * (0.8 - 0.3 * heavy), 24)   # heavy weights keep the terminal higher, where the curve is steep
+    need = (cy - (yb - h / 2 - gap - ext)) / ry
     ang = max(g.ap_angle(16, 46), math.degrees(math.asin(min(max(need, 0.0), 0.95))))
     p, d = g.arc_node(cx, cy, rx, ry, -ang)
-    st = g.P().m(cx + rx, yb - h / 2, "N").c(cx, cy + ry, "W").c(cx - rx, cy, "S")
+    # the bowl starts flush with the underside of the bar: no shelf below it
+    st = g.P().m(cx + rx, yb - h * wb / 2, "N").c(cx, cy + ry, "W").c(cx - rx, cy, "S")
     st.c(cx, cy - ry, "E").c(p[0], p[1], d, cut=g.cutdir())
     g.add(st, cap0="butt")
-    heavy = min(max((T - 100) / 80, 0.0), 1.0)
-    g.bar(cx - rx, cx + rx, yb, wm=0.95 - 0.22 * heavy, cap0="butt", cap1="butt")
+    g.bar(cx - rx, cx + rx, yb, wm=wb, cap0="butt", cap1="butt")
     return w
 
 
@@ -253,9 +256,18 @@ def r(g):
 
 
 def _s(g, w, H, T):
-    """Upper bowl, diagonal spine, lower bowl, drawn as one stroke."""
+    """Upper bowl, diagonal spine, lower bowl, drawn as one stroke.
+
+    Heavy weights widen the letter and thin the spine, as a designer does, so
+    the two counters stay open instead of closing to slits."""
     import math
-    h, os = T * g.hf, g.os
+    heavy = min(max((T / H - 0.17) / 0.12, 0.0), 1.0)
+    w = w + T * 0.42 * heavy
+    spine = 1.0 - 0.1 * heavy
+    from .geometry import Pen, Stroke
+    hf = g.hf * (1.0 - 0.2 * heavy)       # lighter horizontals, open counters
+    pen = Pen(hratio=hf, roundness=g.pen.k)
+    h, os = T * hf, g.os
     cx = w / 2
     top, bot = H + os - h / 2, -os + h / 2
     ym = (top + bot) / 2 + H * 0.012
@@ -269,9 +281,9 @@ def _s(g, w, H, T):
     t1, d1 = g.arc_node(cxu, top - ru * 1.15, au, ru * 1.15, a)
     t2, d2 = g.arc_node(cx, bot + rl * 1.15, al, rl * 1.15, 180 + a)
     cut = g.cutdir()
-    st = g.P(T=T)
+    st = Stroke(pen, T)
     st.m(t1[0], t1[1], d1, cut=cut).c(cxu, top, "W").c(cxu - au, yu, "S")
-    st.c(cx, ym, ang, w=T * 1.0, k=0.6).c(cx + al, yl, "S", k=0.6).c(cx, bot, "W")
+    st.c(cx, ym, ang, w=T * spine, k=0.6).c(cx + al, yl, "S", k=0.6).c(cx, bot, "W")
     st.c(t2[0], t2[1], (-d2[0], -d2[1]), cut=cut)
     g.add(st)
 
@@ -644,9 +656,11 @@ def two(g):
     cy = top - ry
     p, d = g.arc_node(cx, cy, rx, ry, 180 - g.ap_angle(14, 40), ccw=False)
     xb = T * 0.72
-    nk = (w * 0.63, H * 0.41)
-    dn = norm((xb - nk[0], h - nk[1]))
-    st = g.P().m(p[0], p[1], d, cut=g.cutdir()).c(cx, top, "E").c(cx + rx, cy, "S").c(nk[0], nk[1], dn, w=T * 0.98)
+    # one continuous stroke: the bowl rolls straight into the diagonal, the
+    # same pen all the way, so there is no step where they meet
+    nk = (w * 0.6, H * 0.4)
+    dn = norm((xb - nk[0], h * 0.5 - nk[1]))
+    st = g.P().m(p[0], p[1], d, cut=g.cutdir()).c(cx, top, "E").c(cx + rx, cy, "S", k=0.6).c(nk[0], nk[1], dn, k=0.62)
     st.l(xb, h * 0.5, cut="E")
     g.add(st, cap1="butt")
     g.bar(0, w, h / 2, cap0="butt")
@@ -680,8 +694,14 @@ def four(g):
     xs = w * 0.71
     yb = H * 0.25
     g.stem(xs, 0, H, sb="f", cap1="butt")
-    g.bar(0, w, yb, cap0="butt")
-    g.dg(xs + T / 2, H, 0, yb - h / 2, ea=1, eb=-1, wm=0.95)
+    ca, cb, half = g.dg(xs + T / 2, H, 0, yb - h / 2, ea=1, eb=-1, wm=0.95)
+    # the bar's left end follows the diagonal's outer edge, so nothing pokes out
+    xa_l, xb_l = ca - half, cb - half
+    y0, y1 = yb - h / 2, yb + h / 2
+
+    def edge(y):
+        return xb_l + (xa_l - xb_l) * (y - y0) / (H - y0)
+    g.poly([(edge(y0), y0), (w, y0), (w, y1), (edge(y1), y1)])
 
 
 @glyph("five", 0x35, "fig")
@@ -706,13 +726,16 @@ def five(g):
 def six(g):
     T, h, H = g.T, g.h, g.cap
     w = _fw(g)
-    g.oval(0, -g.os, w, H * 0.63)
+    yo = H * 0.63
+    g.oval(0, -g.os, w, yo)
     top = H + g.os - h / 2
     cx = w * 0.53
     yl = H * 0.42
     rx, ry = cx - T / 2, top - yl
     p, d = g.arc_node(cx, yl, rx * 0.98, ry, min(g.ap_angle(34, 58) + max(T - 90, 0) * 0.2, 72))
-    st = g.P().m(p[0], p[1], d, cut=g.cutdir()).c(cx, top, "W").c(T / 2, yl, "S").l(T / 2, H * 0.3)
+    # the stem runs down into the bowl's widest point and stops where the bowl's
+    # own side takes over, so the two outlines meet tangent with no ledge
+    st = g.P().m(p[0], p[1], d, cut=g.cutdir()).c(cx, top, "W").c(T / 2, yl, "S").l(T / 2, yo / 2 - g.os / 2)
     g.add(st, cap1="butt")
 
 

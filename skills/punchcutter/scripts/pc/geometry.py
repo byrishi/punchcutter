@@ -259,11 +259,23 @@ class Stroke:
             d = dout
             w = self._width(nd, d)
             n = left(d)
+            # a cut nearly parallel to the stroke would slice off a long thin
+            # wedge; tilt it just enough to meet the stroke at a firm angle
+            cn, cd = dot(c, n), dot(c, d)
+            if abs(cn) < 0.62:
+                cn = 0.62 if cn >= 0 else -0.62
+                cd = math.copysign(math.sqrt(1 - cn * cn), cd if cd else 1.0)
+                c = add((n[0] * cn, n[1] * cn), d, cd)
             den = dot(n, c)
             if abs(den) < 0.4:
                 den = 0.4 if den >= 0 else -0.4
-            off = (w / 2) / den
-            return add(p, c, off), add(p, c, -off)
+                off = (w / 2) / den
+                return add(p, c, off), add(p, c, -off)
+            # offset each side square to the stroke, then run it along its own
+            # direction until it meets the cut through p: the side keeps its
+            # line, so its curve arrives clean with no tooth at the terminal
+            ql, qr = add(p, n, w / 2), add(p, n, -w / 2)
+            return intersect(ql, d, p, c) or ql, intersect(qr, d, p, c) or qr
         win, wout = self._width(nd, din), self._width(nd, dout)
         li, ri = add(p, left(din), win / 2), add(p, left(din), -win / 2)
         if abs(cross(din, dout)) < 1e-3:

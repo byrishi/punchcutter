@@ -207,23 +207,52 @@ def draw_master(design, log=None, traced=None):
     cmap = {gl.uni: gl.name for gl in glyphs.values() if gl.uni}
     from fontTools.agl import UV2AGL
     made = 0
-    for cp in list(range(0xC0, 0x180)) + [0x1E80, 0x1E81, 0x1E82, 0x1E83, 0x1E84, 0x1E85, 0x1EF2, 0x1EF3]:
+    extra = [0x1E80, 0x1E81, 0x1E82, 0x1E83, 0x1E84, 0x1E85, 0x1EF2, 0x1EF3,      # Welsh w and y
+             0x218, 0x219, 0x21A, 0x21B,                                          # Romanian s and t comma
+             0x1EB8, 0x1EB9, 0x1ECC, 0x1ECD, 0x1E62, 0x1E63]                      # Yoruba dot below
+    for cp in list(range(0xC0, 0x180)) + extra:
         if cp in cmap:
             continue
         dec = unicodedata.normalize("NFD", chr(cp))
         if len(dec) != 2 or ord(dec[1]) not in glyphs_extra.MARKS or ord(dec[0]) not in cmap:
             continue
         bch, mark = dec[0], glyphs_extra.MARKS[ord(dec[1])]
-        if (mark == "caron" and bch in "dltL") or (mark == "cedilla" and bch not in "CcSsTt"):
+        if mark == "cedilla" and bch in "GKLNRgklnr":
+            mark = "commaturnedabove" if bch == "g" else "commaaccentcomb"   # Latvian uses a comma
+        elif mark == "cedilla" and bch not in "CcSsTt":
+            continue
+        vert = mark == "caron" and bch in "dltL"
+        if vert:
+            mark = "caronvert"
+        if mark not in glyphs:
             continue
         variants = [("", cmap[ord(bch)])]
         if bch == "a" and "a.ss01" in glyphs:
             variants.append((".ss01", "a.ss01"))
         for suffix, bname in variants:
-            draw_base = {"i": "dotlessi", "j": "dotlessj"}.get(bch, bname) if mark != "cedilla" else bname
+            draw_base = {"i": "dotlessi", "j": "dotlessj"}.get(bch, bname) if mark not in glyphs_extra.BELOW else bname
+            if bch == "i" and mark == "ogonek":
+                draw_base = bname
             bg, mg = glyphs[draw_base], glyphs[mark]
-            if mark == "cedilla":
+            dx = bg.center - mg.center
+            adv = bg.advance
+            if mark in glyphs_extra.BELOW:
                 dy = 0.0
+                if mark == "ogonek":   # hangs from the right foot of the letter
+                    bb, mb = bounds(bg.contours), bounds(mg.contours)
+                    dx = (bb[2] - s * 0.55) - mb[0] if bb and mb else dx
+            elif vert:
+                bb, mb = bounds(bg.contours), bounds(mg.contours)
+                top = cap if bch == "L" else design["asc"]
+                if bch == "L":
+                    x = bb[0] + s * 1.5
+                elif bch == "t":
+                    x = bb[2] - s * 0.1
+                else:
+                    x = bb[2] + s * 0.45
+                dx, dy = x - mb[0], top - mb[3]
+                if bch in "dl":
+                    adv += max(0.0, (x + (mb[2] - mb[0])) - bb[2]) * 0.8
             elif bch.isupper():
                 dy = cap - xh
             elif bch in "bdfhklt":
@@ -232,8 +261,8 @@ def draw_master(design, log=None, traced=None):
                 dy = 0.0
             name = UV2AGL.get(cp, "uni%04X" % cp) + suffix
             c = Glyph(name, None if suffix else cp, "uc" if bch.isupper() else "lc")
-            c.components = [(draw_base, 0.0, 0.0), (mark, bg.center - mg.center, dy)]
-            c.advance, c.center = bg.advance, bg.center
+            c.components = [(draw_base, 0.0, 0.0), (mark, dx, dy)]
+            c.advance, c.center = adv, bg.center
             glyphs[name] = c
             made += 1
 
@@ -399,8 +428,9 @@ def write_ufo(path, glyphs, design, spec, style, wght, groups, kerning, fea):
     info.openTypeOS2TypoAscender = info.openTypeHheaAscender = asc
     info.openTypeOS2TypoDescender = info.openTypeHheaDescender = desc
     info.openTypeOS2TypoLineGap = info.openTypeHheaLineGap = 0
-    info.openTypeOS2WinAscent = max(math.ceil(ymax), asc)
-    info.openTypeOS2WinDescent = max(math.ceil(-ymin), -desc)
+    # sampled bounds can miss a curve's true extreme by a unit or two
+    info.openTypeOS2WinAscent = max(math.ceil(ymax) + 6, asc)
+    info.openTypeOS2WinDescent = max(math.ceil(-ymin) + 6, -desc)
     info.openTypeOS2Selection = [7]
     info.openTypeOS2Type = []
     info.openTypeGaspRangeRecords = [{"rangeMaxPPEM": 65535, "rangeGaspBehavior": [0, 1, 2, 3]}]
@@ -511,6 +541,13 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
     drawn, meta = {}, {}
     for w, d in masters.items():
         drawn[w], meta[w] = draw_master(d, traced=traced["weights"][str(w)]["glyphs"] if traced else None)
+    from .finish import finish_masters
+    if traced:   # the writer's pen already shaped every edge; keep it as written
+        for d in masters.values():
+            d["soften"] = 0.0
+    kept = finish_masters(drawn, masters)
+    log.note(f"finishing: overlaps merged and corners softened ({len(kept)} glyph(s) kept as overlapping strokes"
+             + (f": {', '.join(kept[:12])}" if kept else "") + ")")
     any_m = next(iter(drawn.values()))
     m0 = meta[next(iter(meta))]
     log.note(f"{len(any_m)} glyphs per master ({m0['composites']} accented composites)")

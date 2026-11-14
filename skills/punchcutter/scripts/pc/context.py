@@ -36,6 +36,7 @@ DEFAULTS = dict(
     weight_comp=0.9,   # how much letters widen as the stem gets heavier
     spacing=1.0,       # global letter-spacing factor
     kerning=1.0,       # kerning strength, 0 disables
+    soften=0.07,       # corner radius in stems: 0 = knife-sharp, 0.3 = rounded-sans soft
 )
 
 

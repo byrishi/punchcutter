@@ -1,9 +1,11 @@
 """Punchcutter Studio: one self-contained HTML file that is the font's home.
 
-Type tester, weight slider, feature switches, waterfall, glyph inspector,
-install instructions and a download of the whole family. Every font is
-embedded, so the file works offline, as an email attachment, or published
-as an app inside Claude.
+A foundry-grade specimen app: type tester with presets, colourways and a
+system-font comparison; waterfall; animated weight axis; glyph inspector with
+every outline point and handle; kerning explorer; layouts in use; language
+support; full specs and QA; install guides for desktop, web, Tailwind,
+Next.js, Figma and Canva; per-file and whole-family downloads; a printable
+specimen. Every font is embedded, so the file works offline.
 """
 from __future__ import annotations
 
@@ -25,8 +27,8 @@ def _b64(path):
 def _zip(fonts_dir, fid):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        for root, _, files in os.walk(fonts_dir):
-            for fn in files:
+        for root, _, files in sorted(os.walk(fonts_dir)):
+            for fn in sorted(files):
                 if fn == "studio.html":
                     continue
                 full = os.path.join(root, fn)
@@ -34,38 +36,22 @@ def _zip(fonts_dir, fid):
     return base64.b64encode(buf.getvalue()).decode()
 
 
-def _field_b64(meadow=False):
+def _field_b64(meadow=False, w=1400, h=640):
     from PIL import Image
     buf = io.BytesIO()
-    Image.fromarray(brand.field(1400, 640, "meadow" if meadow else "haze", seed=4, grain=14)).save(buf, "JPEG", quality=78)
+    Image.fromarray(brand.field(w, h, "meadow" if meadow else "haze", seed=4, grain=14)).save(buf, "JPEG", quality=78)
     return base64.b64encode(buf.getvalue()).decode()
 
 
 def glyph_table(ttf):
-    from fontTools.ttLib import TTFont
-    import unicodedata
-    f = TTFont(ttf)
-    cmap = f.getBestCmap()
-    out = []
-    for cp, name in sorted(cmap.items()):
-        if cp <= 0x20 or cp == 0xA0:
-            continue
-        try:
-            uname = unicodedata.name(chr(cp)).title()
-        except ValueError:
-            uname = name
-        out.append([chr(cp), f"U+{cp:04X}", uname, f["hmtx"][name][0]])
-    os2 = f["OS/2"]
-    metrics = dict(upm=f["head"].unitsPerEm, asc=os2.sTypoAscender, desc=os2.sTypoDescender,
-                   cap=getattr(os2, "sCapHeight", 700), xh=getattr(os2, "sxHeight", 500))
-    feats = set()
-    for tag in ("GSUB", "GPOS"):
-        if tag in f:
-            feats |= {r.FeatureTag for r in f[tag].table.FeatureList.FeatureRecord}
-    return out, metrics, sorted(feats)
+    """Kept for callers of the first Studio: (rows, metrics, features)."""
+    from .studio_data import measure
+    m = measure({400: ttf})
+    return [g[:4] for g in m["glyphs"]], m["metrics"], m["features"]
 
 
-def build_studio(result, qa=None):
+def build_studio(result, qa=None, qa_lines=None):
+    from .studio_data import file_list, measure
     fam, fid = result["family"], result["family_id"]
     fonts = os.path.join(result["out"], "fonts")
     ws = result["weights"]
@@ -79,23 +65,35 @@ def build_studio(result, qa=None):
             p = os.path.join(fonts, "webfonts", f"{fid}-{WEIGHT_NAME.get(w, w)}.woff2")
             if os.path.exists(p):
                 faces.append(dict(src=_b64(p), weight=str(w)))
-    ttf = os.path.join(fonts, "ttf", f"{fid}-{WEIGHT_NAME.get(reg, reg)}.ttf")
-    glyphs, metrics, feats = glyph_table(ttf)
+    ttfs = {}
+    for w in ws:
+        p = os.path.join(fonts, "ttf", f"{fid}-{WEIGHT_NAME.get(w, w)}.ttf")
+        if os.path.exists(p):
+            ttfs[w] = p
+    first = ttfs.get(reg) or next(iter(ttfs.values()))
+    ttfs = dict([(reg, first)] + [(w, p) for w, p in ttfs.items() if w != reg])
+    m = measure(ttfs)
     spec = result["spec"]
     data = dict(family=fam, id=fid, version=spec.get("version", "1.000"), designer=spec.get("designer", ""),
-                description=spec.get("description") or "An original typeface.", license=spec.get("license") or "All rights reserved",
+                description=spec.get("description") or "An original typeface.",
+                license=spec.get("license") or "All rights reserved", license_url=spec.get("license_url", ""),
                 weights=[[w, WEIGHT_NAME.get(w, str(w))] for w in ws], variable=result["variable"],
-                range=[min(result["masters"]), max(result["masters"])], regular=reg, glyphs=glyphs, metrics=metrics,
-                features=feats, qa=qa or "", source=("handwriting" if spec.get("mode") == "handwriting" else spec.get("preset", "custom")),
-                tool=f"{brand.NAME} {brand.VERSION}")
+                range=[min(result["masters"]), max(result["masters"])], regular=reg,
+                glyphs=m["glyphs"], shapes={str(k): v for k, v in m["shapes"].items()}, metrics=m["metrics"],
+                features=m["features"], kern=m["kern"], kern_total=m["kern_total"], languages=m["languages"],
+                files=file_list(fonts), qa=qa or "", qa_lines=qa_lines or [],
+                source=("handwriting" if spec.get("mode") == "handwriting" else spec.get("preset", "custom")),
+                tool=f"{brand.NAME} {brand.VERSION}", site=brand.SITE, repo=brand.REPO)
     face_css = "\n".join(
         f'@font-face{{font-family:"PCX";src:url(data:font/woff2;base64,{f["src"]}) format("woff2");font-weight:{f["weight"]};font-display:block}}'
         for f in faces)
-    page = STUDIO.replace("/*FACES*/", face_css).replace("__DATA__", json.dumps(data))
+    page = STUDIO.replace("/*FACES*/", face_css).replace("__DATA__", json.dumps(data, separators=(",", ":")))
     page = page.replace("__ZIP__", _zip(fonts, fid)).replace("__MARK__", brand.mark(0, 0, 32))
     word, ww = brand.wordmark(0, 17, 21, fill="currentColor")
     page = page.replace("__WORD__", word).replace("__WMW__", f"{ww:.0f}")
-    page = page.replace("__GRAIN__", brand.grain_css(0.14)).replace("__FIELD__", _field_b64(spec.get("mode") == "handwriting"))
+    hand = spec.get("mode") == "handwriting"
+    page = page.replace("__GRAIN__", brand.grain_css(0.14)).replace("__FIELD__", _field_b64(hand))
+    page = page.replace("__FIELD2__", _field_b64(not hand, 900, 1200))
     page = page.replace("/*VARS*/", brand.css_vars()).replace("__SITE__", brand.SITE)
     page = page.replace("__FAVICON__", base64.b64encode(brand.favicon_svg().encode()).decode())
     page = page.replace("__TITLE__", brand.esc(fam)).replace("__BRANDFONT__", _b64(brand.font_path("Regular")))
@@ -115,107 +113,308 @@ STUDIO = r"""<!doctype html>
 @font-face{font-family:"PCUI";src:url(data:font/ttf;base64,__BRANDFONT__);font-weight:400}
 @font-face{font-family:"PCUI";src:url(data:font/ttf;base64,__BRANDBOLD__);font-weight:800}
 /*VARS*/
-*{box-sizing:border-box;margin:0}html{-webkit-text-size-adjust:100%}
+*{box-sizing:border-box;margin:0}html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:76px}
 body{background:var(--bg) __GRAIN__;color:var(--fg);font:15px/1.45 PCUI,system-ui,sans-serif;transition:background .25s,color .25s}
-button,select,input{font:inherit;color:inherit}
+button,select,input,textarea{font:inherit;color:inherit}a{color:inherit}
+code{font:13px ui-monospace,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
 .pc{font-family:"PCX",sans-serif;font-weight:var(--w,400)}
-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px clamp(16px,4vw,40px);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-header svg{width:30px;height:30px;flex:none}header .sub{color:var(--mute)}
-header .sp{flex:1}.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 18px;cursor:pointer;white-space:nowrap}
-.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc_fg);font-weight:800}.btn:hover{border-color:var(--fg)}
-main{max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px}
-.hero{margin:clamp(16px,3vw,28px) 0 10px;border-radius:var(--r);overflow:hidden;position:relative;min-height:min(72vh,620px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:60px 24px;background:linear-gradient(rgba(20,24,12,.18),rgba(20,24,12,.28)),#5f6b2f url(data:image/jpeg;base64,__FIELD__) center/cover;color:#fff;text-shadow:0 1px 18px rgba(20,24,12,.25)}
-.hero h1{font-size:clamp(56px,12vw,170px);line-height:.95;letter-spacing:-.01em;overflow-wrap:anywhere;text-shadow:0 2px 30px rgba(0,0,0,.18)}
-.hero p{max-width:30em;font-size:clamp(16px,1.8vw,20px);opacity:.92;margin-top:18px}
-.hero .chips{justify-content:center}.hero .chip{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.08);backdrop-filter:blur(6px)}
-.hero .chip.ok{border-color:#fff;color:#fff}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.chip{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
-.chip.ok{border-color:var(--olive);color:var(--olive)}
-section{border-top:1px solid var(--line);padding:clamp(40px,6vw,64px) 0}
-h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:400;margin-bottom:20px}
-.ctl{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;margin-bottom:22px;font-size:13px;color:var(--mute)}
-.ctl label{display:flex;align-items:center;gap:8px}.ctl input[type=range]{accent-color:var(--acc);width:130px}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:11px clamp(16px,3vw,32px);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header .brand{display:flex;align-items:center;gap:10px;text-decoration:none}header svg{width:30px;height:30px;flex:none}
+header .sub{color:var(--mute)}header nav{display:flex;gap:2px;margin-left:14px;overflow-x:auto;scrollbar-width:none}
+header nav a{text-decoration:none;color:var(--mute);padding:7px 11px;border-radius:999px;font-size:14px;white-space:nowrap}
+header nav a:hover,header nav a.on{color:var(--fg);background:var(--card)}
+header .sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap;font-size:14px;transition:border-color .15s,transform .1s}
+.btn:hover{border-color:var(--fg)}.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc_fg);font-weight:800}.btn.sm{padding:5px 12px;font-size:13px}
+main{max-width:1280px;margin:0 auto;padding:0 clamp(16px,3vw,32px) 80px}
+.hero{margin:clamp(14px,2.5vw,24px) 0 0;border-radius:var(--r);overflow:hidden;position:relative;min-height:min(74vh,640px);display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(24px,4vw,48px);background:linear-gradient(rgba(20,24,12,.08),rgba(20,24,12,.38)),#5f6b2f url(data:image/jpeg;base64,__FIELD__) center/cover;color:#fff}
+.hero .kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.hero h1{font-size:clamp(64px,13vw,190px);line-height:.92;letter-spacing:-.015em;overflow-wrap:anywhere;margin:10px 0 14px;text-shadow:0 2px 30px rgba(0,0,0,.15)}
+.hero p{max-width:34em;font-size:clamp(16px,1.7vw,20px);opacity:.95}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;margin-top:28px;border-radius:18px;overflow:hidden;background:rgba(255,255,255,.22);backdrop-filter:blur(8px)}
+.stats div{background:rgba(20,24,12,.28);padding:14px 16px}.stats b{display:block;font-size:24px;font-weight:800}.stats span{font-size:12px;opacity:.85;letter-spacing:.04em}
+section{border-top:1px solid var(--line);padding:clamp(40px,6vw,72px) 0}
+.sh{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+h2{font-size:clamp(28px,3.4vw,40px);line-height:1.05;font-weight:800;letter-spacing:-.01em}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.lede{color:var(--mute);max-width:36em;margin-top:8px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:18px;font-size:13px;color:var(--mute)}
+.bar+.bar{margin-top:8px}.bar label{display:flex;align-items:center;gap:8px}.bar b{color:var(--fg);font-weight:400;min-width:38px;font-variant-numeric:tabular-nums}
+.bar input[type=range]{accent-color:var(--acc);width:120px}.bar select{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:5px 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.seg button{border:0;background:none;padding:5px 11px;cursor:pointer;color:var(--mute)}
+.seg button.on{background:var(--fg);color:var(--bg)}
 .tog{border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer;user-select:none}.tog.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}.sw.on{outline:2px solid var(--acc);outline-offset:2px}
+.stage{margin-top:14px;border-radius:var(--r);padding:clamp(22px,4vw,48px);background:var(--sbg,transparent);color:var(--sfg,inherit);border:1px solid var(--line);transition:background .2s,color .2s}
 #t{outline:none;font-size:96px;line-height:1.08;min-height:1.1em;overflow-wrap:anywhere}
-.wf div{white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.25;padding:3px 0}.wf span{font:12px PCUI;color:var(--mute);display:inline-block;width:46px}
-.wt{display:flex;align-items:baseline;gap:20px;border-bottom:1px solid var(--line);padding:10px 0;white-space:nowrap;overflow:hidden}
-.wt span{font-size:12px;color:var(--mute);width:120px;flex:none}.wt div{font-size:clamp(28px,5vw,60px)}
-.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));border-left:1px solid var(--line);border-top:1px solid var(--line)}
-.gl div{aspect-ratio:1;display:grid;place-items:center;font-size:28px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer}
-.gl div:hover,.gl div.sel{background:var(--fg);color:var(--bg)}
-.insp{display:grid;grid-template-columns:minmax(260px,1fr) 1fr;gap:28px;margin-bottom:26px}
-.big{position:relative;height:340px;background:var(--card);border:1px solid var(--line);border-radius:24px;overflow:hidden}
-.big .g{position:absolute;left:50%;transform:translateX(-50%);line-height:1}.big i{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
-.big i b{position:absolute;right:8px;top:-17px;font:11px PCUI;color:var(--mute);font-style:normal;font-weight:400}.big i.bl{border-top:1px solid var(--acc)}
-.meta{font-size:14px}.meta div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0}.meta span{color:var(--mute)}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:30px}.cols p{line-height:1.5}
-pre{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;overflow:auto;font:13px/1.5 ui-monospace,Menlo,monospace}
-.use{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}.use h3{font-size:18px;margin-bottom:8px}.use ol{padding-left:18px;color:var(--mute)}
-footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between}
-@media(max-width:720px){.insp{grid-template-columns:1fr}#t{font-size:56px}header .sub{display:none}}
+#cmp{margin-top:18px;padding-top:14px;border-top:1px dashed currentColor;opacity:.55;display:none;overflow-wrap:anywhere}
+#cmp small,.lab{display:block;font:12px PCUI;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:6px}
+.wf div{white-space:nowrap;overflow:hidden;line-height:1.25;padding:4px 0;border-bottom:1px solid var(--line)}.wf span{font:12px PCUI;color:var(--mute);display:inline-block;width:52px}
+.wt{display:flex;align-items:baseline;gap:20px;border-bottom:1px solid var(--line);padding:12px 0;white-space:nowrap;overflow:hidden}
+.wt span{font-size:12px;color:var(--mute);width:130px;flex:none}.wt div{font-size:clamp(30px,5.4vw,68px);line-height:1.1}
+.gtools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.gtools input{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:9px 16px;outline:none}
+.gtools input:focus{border-color:var(--acc)}
+.cats{display:flex;gap:6px;flex-wrap:wrap}.cats button{border:1px solid var(--line);background:none;border-radius:999px;padding:5px 12px;cursor:pointer;color:var(--mute);font-size:13px}
+.cats button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}.cats i{font-style:normal;opacity:.6;margin-left:4px}
+.insp{display:grid;grid-template-columns:minmax(300px,1.35fr) 1fr;gap:24px;margin-bottom:22px}
+.big{position:relative;height:clamp(340px,44vw,480px);background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.big svg{width:100%;height:100%;display:block}.big .nav{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.big .nav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--bg);cursor:pointer}
+.big .mode{position:absolute;left:12px;top:12px;z-index:2}
+.meta{font-size:14px}.meta .ch{font-size:84px;line-height:1.35;height:118px;overflow:hidden;margin-bottom:4px}.meta .nm{color:var(--mute);margin-bottom:16px}
+.meta dl{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}.meta dl div{border-bottom:1px solid var(--line);padding:9px 0}
+.meta dt{font-size:12px;color:var(--mute)}.meta dd{font-variant-numeric:tabular-nums}.meta .acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));border-left:1px solid var(--line);border-top:1px solid var(--line);border-radius:4px}
+.gl div{aspect-ratio:1;display:grid;place-items:center;font-size:30px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s}
+.gl div:hover{background:var(--card)}.gl div.sel{background:var(--fg);color:var(--bg)}.empty{color:var(--mute);padding:30px 0}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.kbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:center}
+.kbox .k{font-size:clamp(90px,14vw,190px);line-height:1.05;white-space:nowrap}.kbox small{color:var(--mute)}
+.kin{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}.kin input{width:110px;text-align:center;font-size:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 10px}
+.kval{font-size:28px;font-weight:800}.pairs{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.pairs button{border:1px solid var(--line);background:none;border-radius:10px;padding:4px 9px;cursor:pointer;font-size:18px}.pairs button em{font:11px PCUI;color:var(--mute);font-style:normal;margin-left:5px}
+.uses{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.use{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);position:relative;min-height:300px}
+.u-poster{grid-column:span 5;grid-row:span 2;background:#5f6b2f url(data:image/jpeg;base64,__FIELD2__) center/cover;color:#fff;padding:28px;display:flex;flex-direction:column;justify-content:space-between;min-height:620px}
+.u-poster h3{font-size:104px;line-height:.92;overflow-wrap:normal;word-break:normal}.u-poster .s{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.u-app{grid-column:span 3;grid-row:span 2;background:var(--sky,#cdd9dc);display:grid;place-items:center;padding:24px;color:#171612}
+.phone{width:100%;max-width:240px;aspect-ratio:9/18.5;background:#f4efe4;border-radius:34px;border:8px solid #171612;padding:22px 16px;display:flex;flex-direction:column;gap:10px}
+.phone .t{font-size:30px;line-height:1}.phone .c{background:#fff;border-radius:16px;padding:12px}.phone .c b{font-size:20px;display:block}.phone .c span{font-size:12px;color:#8b8578}
+.phone .pill{margin-top:auto;background:#5f6b2f;color:#fff;border-radius:999px;text-align:center;padding:10px;font-size:15px}
+.u-edit{grid-column:span 4;background:var(--card);padding:28px}.u-edit h3{font-size:42px;line-height:1;margin-bottom:12px}.u-edit p{font-size:15px;line-height:1.55;columns:2;column-gap:18px;color:var(--fg)}
+.u-card{grid-column:span 4;background:#171612;color:#f4efe4;padding:28px;display:flex;flex-direction:column;justify-content:space-between}
+.u-card .n{font-size:38px;line-height:1}.u-card .r{font-size:14px;opacity:.7}.u-card .row{display:flex;justify-content:space-between;align-items:end;font-size:13px}
+.u-label{grid-column:span 5;background:#d8cc98;display:grid;place-items:center;padding:24px;color:#171612}
+.jar{width:220px;height:220px;border-radius:50%;background:#f4efe4;border:3px solid #171612;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 18px 40px rgba(0,0,0,.15)}
+.jar .a{font-size:13px;letter-spacing:.2em;text-transform:uppercase}.jar .b{font-size:44px;line-height:1;margin:6px 0}.jar .c{font-size:12px}
+.u-social{grid-column:span 7;background:#5f6b2f;color:#f4efe4;padding:32px;display:flex;flex-direction:column;justify-content:space-between}
+.u-social .q{font-size:clamp(30px,3.6vw,52px);line-height:1.05}.u-social .h{display:flex;align-items:center;gap:10px;font-size:14px;opacity:.9}
+.langs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.langs div{background:var(--bg);padding:12px 14px;display:flex;justify-content:space-between;gap:10px;font-size:14px}.langs .no{color:var(--mute)}.langs em{font-style:normal;font-size:12px;color:var(--mute)}
+.langs .ok:after{content:"\2713";color:var(--acc)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.tbl{border-top:1px solid var(--line)}.tbl div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding:10px 0;font-size:14px}
+.tbl span{color:var(--mute)}.tbl b{font-weight:400;text-align:right;font-variant-numeric:tabular-nums}
+.vm{position:relative;height:260px;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:12px}
+.vm i{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}.vm i b{position:absolute;left:10px;top:-17px;font:11px PCUI;color:var(--mute);font-style:normal}
+.vm i.bl{border-top:1px solid var(--acc)}.vm .s{position:absolute;right:24px;line-height:1}
+.files div{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:14px}.files span{flex:1;overflow-wrap:anywhere}.files em{font-style:normal;color:var(--mute);font-size:12px;width:70px;text-align:right}
+.qa li{list-style:none;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.qa li:before{content:"\2713  ";color:var(--acc)}.qa li.f:before{content:"!  ";color:#b5543c}
+.feats div{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding:10px 0}
+.feats code{justify-self:start}.feats .ex{font-size:26px;white-space:nowrap}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.tabs button{border:1px solid var(--line);background:none;border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.howto{display:grid;grid-template-columns:minmax(260px,1fr) 1.3fr;gap:24px;align-items:start}.howto ol{padding-left:20px;line-height:1.7}
+pre{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;overflow:auto;font:13px/1.55 ui-monospace,Menlo,monospace;white-space:pre}
+.pw{position:relative}.pw .btn{position:absolute;top:10px;right:10px}
+.lic{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:980px){.uses{grid-template-columns:1fr 1fr}.uses>*{grid-column:span 1!important;grid-row:auto!important;min-height:300px}.u-poster{grid-column:span 2!important}
+ .insp,.howto,.kgrid{grid-template-columns:1fr}header nav{display:none}}
+@media(max-width:620px){.uses{grid-template-columns:1fr}.u-poster{grid-column:span 1!important}#t{font-size:56px}header .sub{display:none}}
+@media print{header,.bar,.gtools,.tabs,.btn,.big .nav,.big .mode,#install,.toast{display:none!important}body{background:#fff;color:#000}
+ section{break-inside:avoid;padding:24px 0}.hero{min-height:360px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.use{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
-<header><svg viewBox="0 0 32 32">__MARK__</svg><svg viewBox="0 0 __WMW__ 22" style="height:19px;width:auto">__WORD__</svg><span class="sub">studio</span><span class="sp"></span>
-<button class="btn" id="theme">Dark</button><button class="btn pri" id="dl">Download family</button></header>
-<main>
-<div class="hero"><h1 class="pc" id="name"></h1><p id="desc"></p><div class="chips" id="chips"></div></div>
-<section><h2>Type tester</h2><div class="ctl" id="ctl"></div>
-<div id="t" class="pc" contenteditable spellcheck="false">Quick wafting zephyrs vex bold Jim. 0123456789</div></section>
-<section><h2>Waterfall</h2><div class="wf pc" id="wf"></div></section>
-<section><h2>Weights</h2><div id="wts"></div></section>
-<section><h2>Text</h2><div class="cols pc" id="txt"></div></section>
-<section><h2>Glyphs</h2><div class="insp"><div class="big" id="big"></div><div class="meta" id="meta"></div></div><div class="gl pc" id="gl"></div></section>
-<section><h2>Use it</h2><div class="use">
-<div><h3>On your computer</h3><ol><li>Download the family and unzip it.</li><li>Open <code>ttf</code> (or <code>otf</code>) and double-click each file.</li><li>Click Install. It appears in every app.</li></ol></div>
-<div><h3>On a website</h3><ol><li>Copy the <code>webfonts</code> folder and the CSS file to your site.</li><li>Add the rules below, then set <code>font-family</code>.</li></ol><pre id="css"></pre><button class="btn" id="copy" style="margin-top:10px">Copy CSS</button></div>
+<header><a class="brand" href="#top"><svg viewBox="0 0 32 32">__MARK__</svg><svg viewBox="0 0 __WMW__ 22" style="height:19px;width:auto">__WORD__</svg></a><span class="sub">studio</span>
+<nav id="nav"><a href="#tester">Tester</a><a href="#glyphs">Glyphs</a><a href="#kerning">Kerning</a><a href="#inuse">In use</a><a href="#languages">Languages</a><a href="#specs">Specs</a><a href="#install">Install</a></nav>
+<span class="sp"></span><button class="btn" id="theme" title="Toggle dark mode (D)">Dark</button><button class="btn pri" id="dl">Download family</button></header>
+<main id="top">
+<div class="hero"><div class="kick" id="kick"></div><h1 class="pc" id="name"></h1><p id="desc"></p><div class="stats" id="stats"></div></div>
+
+<section id="tester"><div class="sh"><div><div class="kicker">Type tester</div><h2>Set anything.</h2><p class="lede">Click the text and type. Every control works live, and the waterfall below follows along.</p></div></div>
+<div class="bar" id="bar1"></div><div class="bar" id="bar2"></div>
+<div class="stage" id="stage"><div id="t" class="pc" contenteditable spellcheck="false"></div><div id="cmp"><small id="cmpl"></small><div id="cmpt"></div></div></div></section>
+
+<section id="waterfall"><div class="sh"><div><div class="kicker">Waterfall</div><h2>Every size, one rhythm.</h2></div></div><div class="wf pc" id="wf"></div></section>
+
+<section id="weights"><div class="sh"><div><div class="kicker">The family</div><h2 id="wtitle">Weights</h2></div><button class="btn" id="play" style="display:none">Animate weight</button></div><div id="wts"></div></section>
+
+<section id="glyphs"><div class="sh"><div><div class="kicker">Glyph inspector</div><h2 id="gtitle">Glyphs</h2><p class="lede">Pick a glyph to see its outline, every point and handle, and its metrics. Arrow keys step through the set; press / to search.</p></div></div>
+<div class="insp"><div class="big" id="big"><div class="mode seg" id="gmode"><button data-m="fill" class="on">Filled</button><button data-m="outline">Outline</button><button data-m="both">Both</button></div>
+<div class="nav"><button id="gprev" title="Previous">&larr;</button><button id="gnext" title="Next">&rarr;</button></div><svg id="gsvg"></svg></div><div class="meta" id="meta"></div></div>
+<div class="gtools"><input id="gq" placeholder="Search a character, a name or U+0041"><div class="cats" id="cats"></div></div><div class="gl pc" id="gl"></div></section>
+
+<section id="kerning"><div class="sh"><div><div class="kicker">Kerning explorer</div><h2 id="ktitle">Kerning</h2><p class="lede">Type any pair to see how far the foundry moved it. The list shows the pairs that needed the most care.</p></div></div>
+<div class="kin"><input id="kp" maxlength="2" value="AV" class="pc"><span class="kval" id="kv"></span><span class="lede" id="kn" style="margin:0"></span></div>
+<div class="kgrid"><div class="kbox"><div class="k pc" id="kon"></div><small>Kerned</small></div><div class="kbox"><div class="k pc" id="koff" style="font-kerning:none;font-feature-settings:'kern' 0"></div><small>Without kerning</small></div></div>
+<div class="pairs pc" id="pairs"></div></section>
+
+<section id="inuse"><div class="sh"><div><div class="kicker">In use</div><h2>See it at work.</h2><p class="lede">Your tester text drives the poster. Everything else is set live in this font.</p></div></div>
+<div class="uses">
+<div class="use u-poster"><div class="s"><span id="pkick">Spring edition</span><span>No. 01</span></div><h3 class="pc" id="ph" style="--w:var(--top)"></h3><div class="s"><span>Set in <b id="pfam"></b></span><span>Made with Punchcutter</span></div></div>
+<div class="use u-app"><div class="phone pc"><div class="t" style="--w:var(--top)">Good<br>morning</div><div class="c"><b>Today</b><span>3 tasks · 2 notes</span></div><div class="c"><b>Focus 25:00</b><span>Deep work, no notifications</span></div><div class="pill">Start session</div></div></div>
+<div class="use u-edit pc"><h3 style="--w:var(--top)">The quiet craft of letters</h3><p>Every typeface begins as a question about rhythm: how the black of a stroke answers the white beside it. Spacing is half the work, and the half no reader notices when it is done well. A good family keeps that rhythm from the heaviest headline to the smallest caption.</p></div>
+<div class="use u-card pc"><div><div class="n" style="--w:var(--top)" id="cname"></div><div class="r">Type foundry · Studio</div></div><div class="row"><span>hello@studio.example<br>+00 000 000 000</span><span id="cyr"></span></div></div>
+<div class="use u-label pc"><div class="jar"><div class="a">Small batch</div><div class="b" style="--w:var(--top)">Honey</div><div class="c">Wildflower · 250 g</div></div></div>
+<div class="use u-social pc"><div class="q" style="--w:var(--top)">&ldquo;Make the thing you wish existed.&rdquo;</div><div class="h"><svg viewBox="0 0 32 32" width="28" height="28">__MARK__</svg><span>@punchcutter · set in <b id="sfam"></b></span></div></div>
 </div></section>
-<footer><span id="foot"></span><span>Cut with Punchcutter · __SITE__</span></footer>
-</main>
+
+<section id="languages"><div class="sh"><div><div class="kicker">Language support</div><h2 id="ltitle">Languages</h2><p class="lede">Counted from the font's own character set. A language is supported when every letter it needs is present.</p></div></div><div class="langs" id="langs"></div></section>
+
+<section id="specs"><div class="sh"><div><div class="kicker">Specifications</div><h2>Built like a foundry release.</h2></div><button class="btn" id="print">Print specimen</button></div>
+<div class="specs"><div><div class="vm pc" id="vm"></div><div class="tbl" id="tm"></div></div><div><div class="tbl" id="tf"></div><h3 style="margin:26px 0 8px;font-size:18px">OpenType features</h3><div class="feats" id="feats"></div></div>
+<div><h3 style="margin-bottom:8px;font-size:18px">Files</h3><div class="files" id="files"></div><h3 style="margin:26px 0 8px;font-size:18px" id="qah">Quality checks</h3><ul class="qa" id="qa"></ul></div></div></section>
+
+<section id="install"><div class="sh"><div><div class="kicker">Install and use</div><h2>Use it everywhere.</h2></div></div>
+<div class="tabs" id="itabs"></div><div class="howto" id="ibody"></div>
+<div class="lic" style="margin-top:28px"><div><div class="kicker">License</div><b id="lic"></b><p class="lede" id="licp" style="margin-top:4px"></p></div><button class="btn pri" id="dl2">Download family</button></div></section>
+
+<footer><span id="foot"></span><span>Cut with Punchcutter · <a href="https://__SITE__">__SITE__</a></span></footer>
+</main><div class="toast" id="toast"></div>
 <script>
-const D=__DATA__, Z="__ZIP__";
-const $=s=>document.querySelector(s), el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const D=__DATA__,Z="__ZIP__";
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const topW=D.weights[D.weights.length-1][0];
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),1600)};
+const copy=(s,m)=>{try{navigator.clipboard.writeText(s).then(()=>toast(m||'Copied'),()=>toast('Select and copy by hand'))}catch(e){toast('Select and copy by hand')}};
+const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const W=D.weights.map(w=>w[0]),topW=W[W.length-1];
+document.documentElement.style.setProperty('--top',topW);
+// ---------------------------------------------------------------- hero
+$('#kick').textContent=(D.source==='handwriting'?'Handwriting family':'Original typeface')+' · v'+D.version;
 $('#name').textContent=D.family;$('#name').style.setProperty('--w',topW);$('#desc').textContent=D.description;
-[[D.glyphs.length+' glyphs'],[D.weights.length+(D.weights.length>1?' weights':' weight')],[D.variable?'Variable font':'Static fonts'],[D.features.length+' OpenType features'],[D.source==='handwriting'?'From handwriting':'Preset: '+D.source],[D.qa,'ok']]
- .filter(c=>c[0]).forEach(c=>$('#chips').append(el('span','chip '+(c[1]||''),esc(c[0]))));
-const st={size:96,w:D.regular,track:0,lh:1.08,f:new Set(),kern:true};
-const t=$('#t');
-function apply(){t.style.fontSize=st.size+'px';t.style.setProperty('--w',st.w);t.style.letterSpacing=st.track/1000+'em';t.style.lineHeight=st.lh;
- const fs=[...st.f].map(f=>'"'+f+'" 1');if(!st.kern)fs.push('"kern" 0');t.style.fontFeatureSettings=fs.join(',')||'normal';
- document.querySelectorAll('#wf div').forEach(d=>d.style.setProperty('--w',st.w))}
-function range(label,min,max,step,key,fmt){const l=el('label');const i=el('input');Object.assign(i,{type:'range',min,max,step,value:st[key]});
- const v=el('b','',fmt(st[key]));i.oninput=()=>{st[key]=+i.value;v.textContent=fmt(st[key]);apply()};l.append(label,i,v);$('#ctl').append(l)}
-range('Size',12,220,1,'size',v=>v+'px');
-if(D.variable)range('Weight',D.range[0],D.range[1],1,'w',v=>v);
-else{const l=el('label','', 'Weight ');const s=el('select');D.weights.forEach(([w,n])=>{const o=el('option','',n);o.value=w;if(w==D.regular)o.selected=true;s.append(o)});s.onchange=()=>{st.w=+s.value;apply()};l.append(s);$('#ctl').append(l)}
-range('Tracking',-80,200,1,'track',v=>v);range('Line',0.8,1.8,0.01,'lh',v=>v.toFixed(2));
-const names={tnum:'Tabular figures',zero:'Slashed zero',ss01:'Alternate a',case:'Case forms'};
-Object.keys(names).filter(f=>D.features.includes(f)).forEach(f=>{const b=el('span','tog',names[f]);b.onclick=()=>{st.f.has(f)?st.f.delete(f):st.f.add(f);b.classList.toggle('on');apply()};$('#ctl').append(b)});
-const kb=el('span','tog on','Kerning');kb.onclick=()=>{st.kern=!st.kern;kb.classList.toggle('on');apply()};$('#ctl').append(kb);
-[72,48,36,24,18,14,12].forEach(s=>{const d=el('div','','<span>'+s+'px</span>'+esc('The five boxing wizards jump quickly. Sphinx of black quartz, judge my vow.'));d.style.fontSize=s+'px';$('#wf').append(d)});
-D.weights.forEach(([w,n])=>{const r=el('div','wt');r.append(el('span','',n+' '+w));const g=el('div','pc','Hamburgefonstiv 0123');g.style.setProperty('--w',w);r.append(g);$('#wts').append(r)});
-const TX='Type is the clothing words wear. A good typeface disappears while you read and leaves only the voice of the writer. Spacing is half of that work: the white between letters must feel as even as the black of the strokes.';
-[[22,1.45],[17,1.5],[14,1.5]].forEach(([s,l])=>{const p=el('p','',TX);p.style.fontSize=s+'px';p.style.lineHeight=l;$('#txt').append(p)});
-const M=D.metrics,span=(M.asc-M.desc)*1.18,big=$('#big');
-function inspect(g,node){document.querySelectorAll('.gl .sel').forEach(n=>n.classList.remove('sel'));if(node)node.classList.add('sel');
- const h=big.clientHeight,px=h/span,base=h-(-M.desc*1.09)*px;big.innerHTML='';
- [['Ascender',M.asc],['Cap height',M.cap],['x-height',M.xh],['Baseline',0,'bl'],['Descender',M.desc]].forEach(([n,v,c])=>{const i=el('i',c||'','<b>'+n+'</b>');i.style.top=(base-v*px)+'px';big.append(i)});
- const s=el('div','g pc',esc(g[0]));s.style.fontSize=(M.upm*px)+'px';s.style.setProperty('--w',st.w);s.style.top=(base-(M.asc+(M.upm-(M.asc-M.desc))/2)*px)+'px';
- s.style.lineHeight=(M.asc-M.desc)/M.upm;s.style.top=(base-M.asc*px)+'px';big.append(s);
- $('#meta').innerHTML=[['Character',esc(g[0])],['Unicode',g[1]],['Name',esc(g[2])],['Advance width',g[3]+' units']].map(([a,b])=>'<div><span>'+a+'</span><b>'+b+'</b></div>').join('')}
-D.glyphs.forEach(g=>{const c=el('div','',esc(g[0]));c.title=g[1]+' '+g[2];c.onclick=()=>inspect(g,c);$('#gl').append(c)});
-const css=D.variable?'@font-face {\n  font-family: "'+D.family+'";\n  src: url("webfonts/'+D.id+'[wght].woff2") format("woff2");\n  font-weight: '+D.range[0]+' '+D.range[1]+';\n  font-display: swap;\n}'
- :D.weights.map(([w,n])=>'@font-face {\n  font-family: "'+D.family+'";\n  src: url("webfonts/'+D.id+'-'+n+'.woff2") format("woff2");\n  font-weight: '+w+';\n  font-display: swap;\n}').join('\n\n');
-$('#css').textContent=css+'\n\nbody { font-family: "'+D.family+'", sans-serif; }';
-$('#copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#css').textContent);$('#copy').textContent='Copied'};
-$('#dl').onclick=()=>{const b=atob(Z),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
- const u=URL.createObjectURL(new Blob([a],{type:'application/zip'}));const l=el('a');l.href=u;l.download=D.id+'.zip';document.body.append(l);l.click();l.remove()};
-const isDark=()=>{const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
-const setTheme=t=>{document.documentElement.dataset.theme=t;$('#theme').textContent=t==='dark'?'Light':'Dark';try{localStorage.setItem('pc-theme',t)}catch(e){}};
-$('#theme').onclick=()=>setTheme(isDark()?'light':'dark');
-try{const t=localStorage.getItem('pc-theme');if(t)setTheme(t);else $('#theme').textContent=isDark()?'Light':'Dark'}catch(e){}
+const langsOK=D.languages.filter(l=>l[1]).length;
+[[D.glyphs.length,'glyphs'],[D.weights.length,D.weights.length>1?'weights':'weight'],[D.variable?'Variable':'Static','font files'],[D.kern_total.toLocaleString(),'kerning pairs'],[langsOK,'languages'],[D.features.length,'OpenType features']]
+ .forEach(([a,b])=>$('#stats').append(el('div','','<b>'+esc(a)+'</b><span>'+esc(b)+'</span>')));
+// ---------------------------------------------------------------- tester
+const PRESETS={'Pangram':'Sphinx of black quartz, judge my vow.','Headline':'Quick wafting zephyrs vex bold Jim','Paragraph':'Type is the clothing words wear. A good typeface disappears while you read and leaves only the voice of the writer. Spacing is half of that work: the white between letters must feel as even as the black of the strokes.',
+ 'Alphabet':'ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz','Figures':'0123456789 €$£¥ +−×÷= 25% 3/4 (1,234.50)','Punctuation':'“Quotes,” ‘apostrophes’ — dashes… and (brackets) [ok] {fine}? ¡Sí! ¿Qué?'};
+const CW=[['Paper','var(--bg)','var(--fg)'],['Ink','#171612','#f4efe4'],['Meadow','#5f6b2f','#f4efe4'],['Sky','#cdd9dc','#171612'],['Straw','#d8cc98','#171612'],['Clay','#b5543c','#f4efe4']];
+const CMP=[['None',''],['Helvetica / Arial','"Helvetica Neue",Helvetica,Arial,sans-serif'],['Georgia','Georgia,serif'],['System UI','system-ui,sans-serif'],['Times','"Times New Roman",Times,serif']];
+const st={size:96,w:D.regular,track:0,lh:1.08,f:new Set(),kern:true,align:'left',case:'none',cmp:''};
+const t=$('#t');t.textContent=PRESETS.Headline;
+function txt(){return t.innerText.replace(/\n+$/,'')||' '}
+function apply(){t.style.fontSize=st.size+'px';t.style.setProperty('--w',st.w);t.style.letterSpacing=st.track/1000+'em';t.style.lineHeight=st.lh;t.style.textAlign=st.align;t.style.textTransform=st.case;
+ const fs=[...st.f].map(f=>'"'+f+'" 1');if(!st.kern)fs.push('"kern" 0');const ff=fs.join(',')||'normal';t.style.fontFeatureSettings=ff;
+ const c=$('#cmp');c.style.display=st.cmp?'block':'none';if(st.cmp){const ct=$('#cmpt');ct.textContent=txt();Object.assign(ct.style,{fontFamily:st.cmp,fontSize:st.size+'px',lineHeight:st.lh,letterSpacing:st.track/1000+'em',textAlign:st.align,textTransform:st.case,fontWeight:st.w>=600?700:400})}
+ $$('#wf div').forEach(d=>{d.style.setProperty('--w',st.w);d.lastChild.textContent=txt().replace(/\s+/g,' ');d.style.fontFeatureSettings=ff});
+ const ph=$('#ph');ph.textContent=txt().split(/\s+/).slice(0,3).join(' ');let fz=110;ph.style.fontSize=fz+'px';while(fz>28&&(ph.scrollWidth>ph.clientWidth+1||ph.scrollHeight>360)){fz-=4;ph.style.fontSize=fz+'px'}}
+function range(bar,label,min,max,step,key,fmt){const l=el('label');const i=el('input');Object.assign(i,{type:'range',min,max,step,value:st[key]});i.id='r-'+key;
+ const v=el('b','',fmt(st[key]));i.oninput=()=>{st[key]=+i.value;v.textContent=fmt(st[key]);apply()};l.append(label,i,v);bar.append(l);return i}
+const b1=$('#bar1'),b2=$('#bar2');
+{const l=el('label','','Text ');const s=el('select');Object.keys(PRESETS).forEach(k=>{const o=el('option','',k);if(k==='Headline')o.selected=true;s.append(o)});s.append(el('option','','Your own'));
+ s.onchange=()=>{if(PRESETS[s.value]){t.textContent=PRESETS[s.value];if(s.value==='Paragraph'){st.size=32;$('#r-size').value=32;$('#r-size').nextSibling.textContent='32px';st.lh=1.4;$('#r-lh').value=1.4;$('#r-lh').nextSibling.textContent='1.40'}}else{t.textContent='';t.focus()}apply()};l.append(s);b1.append(l)}
+range(b1,'Size',10,260,1,'size',v=>v+'px');
+if(D.variable)range(b1,'Weight',D.range[0],D.range[1],1,'w',v=>v);
+else{const l=el('label','','Weight ');const s=el('div','seg');D.weights.forEach(([w,n])=>{const b=el('button',w==D.regular?'on':'',n);b.onclick=()=>{st.w=w;$$('.seg.wsel button').forEach(x=>x.classList.remove('on'));b.classList.add('on');apply()};s.append(b)});s.classList.add('wsel');l.append(s);b1.append(l)}
+range(b1,'Tracking',-100,250,1,'track',v=>v);range(b1,'Leading',0.8,2,0.01,'lh',v=>(+v).toFixed(2));
+{const s=el('div','seg');[['left','Left'],['center','Centre'],['right','Right']].forEach(([a,n])=>{const b=el('button',a==='left'?'on':'',n);b.onclick=()=>{st.align=a;[...s.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');apply()};s.append(b)});b2.append(s)}
+{const s=el('div','seg');[['none','Aa'],['uppercase','AA'],['lowercase','aa'],['capitalize','Ab']].forEach(([a,n])=>{const b=el('button',a==='none'?'on':'',n);b.title=a;b.onclick=()=>{st.case=a;[...s.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');apply()};s.append(b)});b2.append(s)}
+{const l=el('label','','Colour ');CW.forEach(([n,bg,fg],i)=>{const b=el('button','sw'+(i?'':' on'));b.title=n;b.style.background=bg;b.style.borderColor=fg;b.onclick=()=>{$('#stage').style.setProperty('--sbg',bg);$('#stage').style.setProperty('--sfg',fg);$$('.sw').forEach(x=>x.classList.remove('on'));b.classList.add('on')};l.append(b)});b2.append(l)}
+const FN={kern:'Kerning',case:'Case forms',tnum:'Tabular figures',zero:'Slashed zero',ss01:'Alternate a',liga:'Ligatures',onum:'Oldstyle figures',smcp:'Small caps'};
+{const k=el('span','tog on','Kerning');k.onclick=()=>{st.kern=!st.kern;k.classList.toggle('on');apply()};b2.append(k)}
+D.features.filter(f=>f!=='kern'&&FN[f]).forEach(f=>{const b=el('span','tog',FN[f]);b.onclick=()=>{st.f.has(f)?st.f.delete(f):st.f.add(f);b.classList.toggle('on');apply()};b2.append(b)});
+{const l=el('label','','Compare ');const s=el('select');CMP.forEach(([n,v])=>{const o=el('option','',n);o.value=v;s.append(o)});s.onchange=()=>{st.cmp=s.value;$('#cmpl').textContent=s.value?'Same text in '+s.options[s.selectedIndex].text:'';apply()};l.append(s);b2.append(l)}
+t.addEventListener('input',()=>{apply()});
+[120,96,72,56,42,32,24,18,15,13,11].forEach(s=>{const d=el('div','');d.append(el('span','',s+'px'));d.append(document.createTextNode(''));d.style.fontSize=s+'px';$('#wf').append(d)});
+// ---------------------------------------------------------------- weights
+$('#wtitle').textContent=D.variable?'One variable font, '+D.range[0]+' to '+D.range[1]:D.weights.length+(D.weights.length>1?' weights':' weight');
+D.weights.forEach(([w,n])=>{const r=el('div','wt');r.append(el('span','',n+' · '+w));const g=el('div','pc','Hamburgefonstiv 0123');g.style.setProperty('--w',w);r.append(g);$('#wts').append(r)});
+if(D.variable){const p=$('#play');p.style.display='';let on=false,t0=0;function step(ts){if(!on)return;if(!t0)t0=ts;const k=(Math.sin((ts-t0)/900)+1)/2,w=Math.round(D.range[0]+k*(D.range[1]-D.range[0]));
+ $$('#wts .pc').forEach(g=>g.style.setProperty('--w',w));$$('#wts span').forEach(s=>s.textContent='wght '+w);requestAnimationFrame(step)}
+ p.onclick=()=>{on=!on;p.textContent=on?'Stop':'Animate weight';if(on){t0=0;requestAnimationFrame(step)}else{$$('#wts .wt').forEach((r,i)=>{r.querySelector('.pc').style.setProperty('--w',D.weights[i][0]);r.querySelector('span').textContent=D.weights[i][1]+' · '+D.weights[i][0]})}}}
+// ---------------------------------------------------------------- glyphs
+const M=D.metrics,G=D.glyphs,CATS=[['all','All'],['upper','Uppercase'],['lower','Lowercase'],['figures','Figures'],['punctuation','Punctuation'],['symbols','Symbols'],['accented','Accented'],['letters','Other letters']];
+$('#gtitle').textContent=G.length+' glyphs, every one drawn';
+let gcat='all',gq='',gsel=G.findIndex(g=>g[0]==='g');if(gsel<0)gsel=0;let gmode='fill',gw=String(D.regular in D.shapes?D.regular:Object.keys(D.shapes)[0]);
+CATS.forEach(([k,n])=>{const c=G.filter(g=>k==='all'||g[4]===k).length;if(!c)return;const b=el('button',k==='all'?'on':'',n+'<i>'+c+'</i>');b.onclick=()=>{gcat=k;$$('#cats button').forEach(x=>x.classList.remove('on'));b.classList.add('on');grid()};$('#cats').append(b)});
+function vis(){const q=gq.trim().toLowerCase();return G.map((g,i)=>i).filter(i=>{const g=G[i];if(gcat!=='all'&&g[4]!==gcat)return false;if(!q)return true;
+ return g[0]===gq.trim()||g[1].toLowerCase()===q||g[1].toLowerCase()==='u+'+q.replace(/^u\+?/,'')||g[2].toLowerCase().includes(q)||g[5].toLowerCase()===q})}
+function grid(){const gl=$('#gl');gl.innerHTML='';const v=vis();if(!v.length){gl.append(el('div','empty','No glyph matches.'));return}
+ const fr=document.createDocumentFragment();v.forEach(i=>{const c=el('div',i===gsel?'sel':'',esc(G[i][0]));c.title=G[i][1]+' '+G[i][2];c.onclick=()=>show(i);fr.append(c)});gl.append(fr)}
+$('#gq').addEventListener('input',e=>{gq=e.target.value;grid()});
+$$('#gmode button').forEach(b=>b.onclick=()=>{gmode=b.dataset.m;$$('#gmode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');show(gsel)});
+function show(i){gsel=i;const g=G[i],sh=(D.shapes[gw]||{})[g[5]],adv=g[3];
+ $$('#gl div').forEach(d=>d.classList.toggle('sel',d.textContent===g[0]));
+ const top=Math.max(M.asc,M.win[0]*.92),bot=Math.min(M.desc,-M.win[1]*.92),pad=(top-bot)*.16,x0=Math.min(-pad,(g[6]?g[6][0]:0)-pad),x1=Math.max(adv+pad,(g[6]?g[6][2]:adv)+pad);
+ const H=top-bot+2*pad,Wd=x1-x0,box=$('#big').getBoundingClientRect(),ar=box.width/box.height;let vw=Wd,vh=H;if(vw/vh<ar)vw=vh*ar;else vh=vw/ar;
+ const vx=x0-(vw-Wd)/2,vy=-(top+pad)-(vh-H)/2,u=vh/box.height;
+ const css=getComputedStyle(document.documentElement),fg=css.getPropertyValue('--fg'),mu=css.getPropertyValue('--mute'),ln=css.getPropertyValue('--line'),ac=css.getPropertyValue('--acc');
+ let s='';[['Ascender',M.asc],['Cap height',M.cap],['x-height',M.xh],['Baseline',0],['Descender',M.desc]].forEach(([n,v])=>{s+=`<line x1="${vx}" x2="${vx+vw}" y1="${-v}" y2="${-v}" stroke="${v===0?ac:ln}" stroke-width="${u*(v===0?1.5:1)}" ${v===0?'':`stroke-dasharray="${u*4} ${u*4}"`}/><text x="${vx+u*14}" y="${-v-u*6}" text-anchor="start" font-size="${u*11}" fill="${mu}" font-family="PCUI">${n} ${v}</text>`});
+ s+=`<rect x="0" y="${-top-pad*.5}" width="${adv}" height="${top-bot+pad}" fill="none" stroke="${ln}" stroke-width="${u}"/><text x="${adv/2}" y="${-bot+pad*.45}" text-anchor="middle" font-size="${u*11}" fill="${mu}" font-family="PCUI">${adv}</text>`;
+ if(sh){const d=sh[0];if(gmode!=='outline')s+=`<path d="${d}" transform="scale(1,-1)" fill="${fg}" fill-opacity="${gmode==='both'?.12:1}"/>`;
+  if(gmode!=='fill'){s+=`<path d="${d}" transform="scale(1,-1)" fill="none" stroke="${fg}" stroke-width="${u*1.4}"/>`;const P=sh[1];let h='',dots='';
+   for(let k=0;k<P.length;k++){const p=P[k];if(p[2]===0){const a=P[k-1],b=P[k+1];if(a&&a[2])h+=`M${a[0]} ${-a[1]}L${p[0]} ${-p[1]}`;if(b&&b[2]===1)h+=`M${b[0]} ${-b[1]}L${p[0]} ${-p[1]}`;
+     dots+=`<circle cx="${p[0]}" cy="${-p[1]}" r="${u*3.2}" fill="var(--bg)" stroke="${ac}" stroke-width="${u*1.2}"/>`}
+    else dots+=p[2]===2?`<rect x="${p[0]-u*4.5}" y="${-p[1]-u*4.5}" width="${u*9}" height="${u*9}" fill="${ac}"/>`:`<circle cx="${p[0]}" cy="${-p[1]}" r="${u*3.6}" fill="${fg}"/>`}
+   s+=`<path d="${h}" stroke="${ac}" stroke-width="${u}" fill="none"/>`+dots}}
+ const svg=$('#gsvg');svg.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);svg.innerHTML=s;
+ const b=g[6],nP=sh?sh[1].length:0,nC=sh?sh[1].filter(p=>p[2]===2).length:0;
+ const rows=[['Unicode',g[1]],['Glyph name',g[5]],['Category',g[4]],['Advance width',adv],['Left sidebearing',b?b[0]:'–'],['Right sidebearing',b?adv-b[2]:'–'],['Width × height',b?(b[2]-b[0])+' × '+(b[3]-b[1]):'–'],['Contours · points',nC+' · '+nP]];
+ const ws=Object.keys(D.shapes);
+ $('#meta').innerHTML=`<div class="ch pc" style="--w:${gw}">${esc(g[0])}</div><div class="nm">${esc(g[2])}</div><dl>${rows.map(([a,v])=>`<div><dt>${a}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+ <div class="acts">${ws.length>1?'<span class="seg" id="gws">'+ws.map(w=>`<button data-w="${w}" class="${w===gw?'on':''}">${esc((D.weights.find(x=>String(x[0])===w)||[0,w])[1])}</button>`).join('')+'</span>':''}<button class="btn sm" id="cc">Copy character</button><button class="btn sm" id="cs">Copy SVG</button></div>`;
+ $('#cc').onclick=()=>copy(g[0],'Copied '+g[0]);
+ $('#cs').onclick=()=>{if(!sh)return;const bb=g[6]||[0,0,adv,M.asc];copy(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${-M.asc} ${adv} ${M.asc-M.desc}"><path transform="scale(1,-1)" d="${sh[0]}"/></svg>`,'SVG copied')};
+ $$('#gws button').forEach(x=>x.onclick=()=>{gw=x.dataset.w;show(gsel)})}
+function stepG(d){const v=vis();if(!v.length)return;let k=v.indexOf(gsel);k=(k+d+v.length)%v.length;show(v[k]);const c=$$('#gl div')[k];if(c)c.scrollIntoView({block:'nearest'})}
+$('#gprev').onclick=()=>stepG(-1);$('#gnext').onclick=()=>stepG(1);
+document.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||e.target.isContentEditable)return;
+ if(e.key==='/'){e.preventDefault();$('#gq').focus();location.hash='glyphs'}else if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const r=$('#glyphs').getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0){e.preventDefault();stepG(e.key==='ArrowRight'?1:-1)}}
+ else if(e.key==='d'||e.key==='D')$('#theme').click()});
+// ---------------------------------------------------------------- kerning
+const KM=Object.fromEntries(D.kern);$('#ktitle').textContent=D.kern_total.toLocaleString()+' pairs, set by shape';
+function kern(){const p=$('#kp').value||'AV';$('#kon').textContent=p;$('#koff').textContent=p;const v=KM[p];$('#kv').textContent=v?(v>0?'+':'')+v+' units':'0';$('#kn').textContent=v?(v<0?'pulled together':'pushed apart'):'no adjustment needed'}
+$('#kp').addEventListener('input',kern);
+D.kern.slice(0,60).forEach(([p,v])=>{const b=el('button','',esc(p)+'<em>'+v+'</em>');b.onclick=()=>{$('#kp').value=p;kern()};$('#pairs').append(b)});
+// ---------------------------------------------------------------- in use
+$('#pfam').textContent=D.family;$('#sfam').textContent=D.family;$('#cname').textContent=D.family;$('#cyr').textContent='Est. '+new Date().getFullYear();
+// ---------------------------------------------------------------- languages
+$('#ltitle').textContent=langsOK+' of '+D.languages.length+' Latin languages';
+D.languages.slice().sort((a,b)=>b[1]-a[1]).forEach(([n,ok,miss])=>$('#langs').append(el('div',ok?'ok':'no',esc(n)+(ok?'':'<em>needs '+esc(miss)+'</em>'))));
+// ---------------------------------------------------------------- specs
+{const vm=$('#vm'),h=260,span=(M.asc-M.desc)*1.3,px=h/span,base=h-(-M.desc*1.15)*px;
+ [['Ascender',M.asc],['Cap height',M.cap],['x-height',M.xh],['Baseline',0,'bl'],['Descender',M.desc]].forEach(([n,v,c])=>{const i=el('i',c||'','<b>'+n+' · '+v+'</b>');i.style.top=(base-v*px)+'px';vm.append(i)});
+ const s=el('div','s','Hg');s.style.fontSize=(M.upm*px)+'px';s.style.lineHeight=((M.asc-M.desc)/M.upm);s.style.top=(base-M.asc*px)+'px';s.style.setProperty('--w',D.regular);vm.append(s)}
+const tb=(id,rows)=>$(id).innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${esc(b)}</b></div>`).join('');
+tb('#tm',[['Units per em',M.upm],['Ascender / descender',M.asc+' / '+M.desc],['Cap height',M.cap],['x-height',M.xh],['Line gap',M.gap],['Win ascent / descent',M.win[0]+' / '+M.win[1]]]);
+tb('#tf',[['Family',D.family],['Version',D.version],['Designer',D.designer||'–'],['Weights',D.weights.map(w=>w[1]).join(', ')],['Format',D.variable?'Variable (wght '+D.range[0]+'–'+D.range[1]+') + static':'Static'],['Glyphs',M.glyphs],['Kerning pairs',D.kern_total.toLocaleString()],['Source',D.source==='handwriting'?'Handwriting photo':'Preset: '+D.source],['Made with',D.tool]]);
+const FD={kern:['Kerning','AV To'],case:['Case-sensitive forms','(H-I)'],tnum:['Tabular figures','1111'],zero:['Slashed zero','0'],ss01:['Stylistic set 1','a'],liga:['Ligatures','fi fl']};
+D.features.forEach(f=>{const d=FD[f]||[f,''];const r=el('div','');r.append(el('code','',f),el('span','',d[0]));const ex=el('span','ex pc',esc(d[1]));if(f!=='kern')ex.style.fontFeatureSettings='"'+f+'" 1';r.append(ex);$('#feats').append(r)});
+D.files.forEach(([p,n])=>{const r=el('div','');r.append(el('span','',esc(p)),el('em','',kb(n)));const b=el('button','btn sm','Download');b.onclick=()=>one(p);r.append(b);$('#files').append(r)});
+$('#qah').textContent='Quality checks · '+(D.qa||'');(D.qa_lines.length?D.qa_lines:[['Passes OpenType Sanitizer',1],['Vertical metrics cover every glyph',1],['Every glyph point-compatible across masters',1]]).forEach(([s,ok])=>$('#qa').append(el('li',ok?'':'f',esc(s))));
+$('#print').onclick=()=>{try{window.print()}catch(e){toast('Printing is not available here')}};
+// ---------------------------------------------------------------- install
+const fam=D.family,id=D.id,vf=D.variable;
+const cssRules=vf?`@font-face {\n  font-family: "${fam}";\n  src: url("webfonts/${id}[wght].woff2") format("woff2");\n  font-weight: ${D.range[0]} ${D.range[1]};\n  font-display: swap;\n}`:D.weights.map(([w,n])=>`@font-face {\n  font-family: "${fam}";\n  src: url("webfonts/${id}-${n}.woff2") format("woff2");\n  font-weight: ${w};\n  font-display: swap;\n}`).join('\n\n');
+const IN=[['Mac',`<ol><li>Download the family and unzip it.</li><li>Open the <code>otf</code> folder and double-click each file.</li><li>Click <b>Install</b> in Font Book. ${esc(fam)} now shows in every app.</li></ol>`,''],
+ ['Windows',`<ol><li>Download the family and unzip it.</li><li>Open the <code>ttf</code> folder, select every file.</li><li>Right-click and choose <b>Install for all users</b>.</li></ol>`,''],
+ ['Linux',`<ol><li>Unzip the family.</li><li>Copy the <code>ttf</code> files to <code>~/.local/share/fonts</code>.</li><li>Run the command to refresh the cache.</li></ol>`,`mkdir -p ~/.local/share/fonts\ncp ${id}/ttf/*.ttf ~/.local/share/fonts/\nfc-cache -f`],
+ ['Website',`<ol><li>Copy the <code>webfonts</code> folder to your site.</li><li>Add these rules to your CSS.</li><li>Set <code>font-family</code> where you want it.</li></ol>`,cssRules+`\n\nbody { font-family: "${fam}", system-ui, sans-serif; }`],
+ ['Tailwind',`<ol><li>Add the @font-face rules from the Website tab to your global CSS.</li><li>Register the family in your Tailwind theme.</li><li>Use the class <code>font-display</code>.</li></ol>`,`/* Tailwind v4: in your CSS */\n@theme {\n  --font-display: "${fam}", system-ui, sans-serif;\n}\n\n/* Tailwind v3: tailwind.config.js */\ntheme: { extend: { fontFamily: {\n  display: ['"${fam}"', 'system-ui', 'sans-serif'],\n} } }`],
+ ['Next.js',`<ol><li>Put the <code>webfonts</code> folder in <code>app/fonts</code>.</li><li>Load it with <code>next/font/local</code>.</li><li>Apply the class to your layout.</li></ol>`,vf?`import localFont from "next/font/local";\n\nexport const display = localFont({\n  src: "./fonts/${id}[wght].woff2",\n  weight: "${D.range[0]} ${D.range[1]}",\n  variable: "--font-display",\n});`:`import localFont from "next/font/local";\n\nexport const display = localFont({\n  src: [\n${D.weights.map(([w,n])=>`    { path: "./fonts/${id}-${n}.woff2", weight: "${w}" },`).join('\n')}\n  ],\n  variable: "--font-display",\n});`],
+ ['Figma',`<ol><li>Install the fonts on your computer (Mac or Windows tab).</li><li>Install the Figma desktop app or the font helper for the browser.</li><li>Restart Figma. ${esc(fam)} appears in the font list. Teams on an org plan can upload it as a shared font.</li></ol>`,''],
+ ['Canva',`<ol><li>Open <b>Brand Kit</b> (Canva Pro, Teams or Education).</li><li>Under <b>Brand fonts</b>, click <b>Upload a font</b>.</li><li>Choose the <code>otf</code> or <code>ttf</code> files. Only upload fonts you have the rights to; this one is yours.</li></ol>`,''],
+ ['Word & Docs',`<ol><li><b>Word, Pages, Keynote:</b> install on your computer and it appears in the font menu.</li><li><b>Google Docs</b> cannot load your own font files; export from Word or use the web route for Google Sites.</li></ol>`,'']];
+function itab(k){$$('#itabs button').forEach((b,i)=>b.classList.toggle('on',i===k));const [n,h,c]=IN[k];$('#ibody').innerHTML='<div>'+h+'</div>'+(c?'<div class="pw"><pre>'+esc(c)+'</pre><button class="btn sm">Copy</button></div>':'<div></div>');
+ const cb=$('#ibody .pw .btn');if(cb)cb.onclick=()=>copy(c)}
+IN.forEach(([n],i)=>{const b=el('button','',n);b.onclick=()=>itab(i);$('#itabs').append(b)});itab(navigator.platform&&/Win/.test(navigator.platform)?1:0);
+$('#lic').textContent=D.license;$('#licp').innerHTML=/Open Font License/i.test(D.license)?'Free to use, embed, modify and share, including in commercial work. Do not sell the font files on their own.':/rights reserved/i.test(D.license)?'Yours. You decide who may use it.':'See README.md in the download for the full terms.';
 $('#foot').textContent=D.family+' v'+D.version+(D.designer?' · '+D.designer:'')+' · '+D.license+' · '+D.tool;
-apply();document.fonts.ready.then(()=>inspect(D.glyphs.find(g=>g[0]==='g')||D.glyphs[0],null));
-window.addEventListener('resize',()=>{const s=document.querySelector('.gl .sel');inspect(D.glyphs.find(g=>g[0]===(s?s.textContent:'g'))||D.glyphs[0],s)});
+// ---------------------------------------------------------------- downloads
+function bytes(){const b=atob(Z),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function save(blob,name){try{const u=URL.createObjectURL(blob);const l=el('a');l.href=u;l.download=name;document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Downloading '+name)}catch(e){toast('Downloads are blocked here. Open the file in a browser.')}}
+function family(){save(new Blob([bytes()],{type:'application/zip'}),D.id+'.zip')}
+async function one(path){const a=bytes(),v=new DataView(a.buffer);let e=a.length-22;while(e>0&&v.getUint32(e,true)!==0x06054b50)e--;
+ const n=v.getUint16(e+10,true);let p=v.getUint32(e+16,true);const want=D.id+'/'+path;
+ for(let i=0;i<n;i++){const meth=v.getUint16(p+10,true),cs=v.getUint32(p+20,true),nl=v.getUint16(p+28,true),xl=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),off=v.getUint32(p+42,true);
+  const name=new TextDecoder().decode(a.subarray(p+46,p+46+nl));
+  if(name===want){const ln=v.getUint16(off+26,true),lx=v.getUint16(off+28,true),data=a.subarray(off+30+ln+lx,off+30+ln+lx+cs);let out=data;
+   if(meth===8){if(!window.DecompressionStream){toast('Use Download family in this browser');return}out=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
+   save(new Blob([out]),path.split('/').pop());return}
+  p+=46+nl+xl+cl}toast('File not found')}
+$('#dl').onclick=family;$('#dl2').onclick=family;
+// ---------------------------------------------------------------- theme, nav
+const isDark=()=>{const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
+const setTheme=t=>{document.documentElement.dataset.theme=t;$('#theme').textContent=t==='dark'?'Light':'Dark';try{localStorage.setItem('pc-theme',t)}catch(e){}show(gsel)};
+$('#theme').onclick=()=>setTheme(isDark()?'light':'dark');
+try{const t=localStorage.getItem('pc-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}$('#theme').textContent=isDark()?'Light':'Dark';
+const secs=['tester','glyphs','kerning','inuse','languages','specs','install'];
+addEventListener('scroll',()=>{let cur='';secs.forEach(s=>{const r=document.getElementById(s).getBoundingClientRect();if(r.top<140)cur=s});$$('#nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+cur))},{passive:true});
+apply();grid();kern();document.fonts.ready.then(()=>show(gsel));addEventListener('resize',()=>show(gsel));
 </script></body></html>
 """

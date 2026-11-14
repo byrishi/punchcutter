@@ -3,7 +3,7 @@
 A soft, friendly rounded sans for packaging, apps for kids and anything that should smile.
 
 - Weights: Regular (400), Bold (700) plus a variable font (wght axis)
-- 277 characters: Basic Latin, Latin-1 and Latin Extended-A accents, punctuation, currency
+- 335 characters: Basic Latin, Latin-1 and Latin Extended-A accents, punctuation, currency
 - OpenType features: kerning, tabular figures (tnum), slashed zero (zero), case-sensitive forms (case), alternate a (ss01)
 
 ## Files

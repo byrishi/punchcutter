@@ -134,7 +134,7 @@ cannot be opened; offer to design something new.
 
 | Path | What it is |
 | --- | --- |
-| `fonts/studio.html` | the font's app: tester, inspector, install guide, download |
+| `fonts/studio.html` | the font's app: tester, waterfall, glyph inspector with outline points, kerning explorer, layouts in use, language support, specs and QA, install guides, per-file downloads |
 | `fonts/variable/` | one variable font with a weight axis (drawn fonts) |
 | `fonts/ttf/`, `fonts/otf/` | static desktop fonts |
 | `fonts/webfonts/`, `fonts/<Family>.css` | WOFF2 and ready `@font-face` rules |

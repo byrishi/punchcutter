@@ -46,8 +46,9 @@ Corner markers square up the photo, the red guides drop out, each letter is trac
 
 - Variable font with a weight axis (drawn fonts), plus static TTF and OTF for every weight
 - WOFF2 web fonts and ready `@font-face` CSS
-- About 300 glyphs: Latin with accents for most European languages, figures, punctuation, currency
-- Automatic spacing and class kerning (5,000 to 11,000 pairs)
+- 362 glyphs: Latin for 43 languages including Central European, Baltic, Turkish and Romanian, figures, punctuation, currency
+- Overlaps merged and corners softened in proportion to the stroke, so edges look drawn, not generated
+- Automatic optical spacing and class kerning
 - OpenType features: tabular figures, slashed zero, alternate a, case-sensitive punctuation
 - A QA report and proof sheet
 - UFO sources you can open in Glyphs, FontLab or RoboFont
@@ -57,7 +58,19 @@ Corner markers square up the photo, the red guides drop out, each letter is trac
 
 <p align="center"><img src="assets/studio.jpg" alt="Punchcutter Studio" width="100%"></p>
 
-Type tester, weight slider, feature switches, waterfall, glyph inspector, install guide and a download button for the whole family. All fonts are embedded, so it works offline, as an email attachment, hosted anywhere, or published as an artifact that opens right inside the Claude chat. A prebuilt one is in [`examples/fonts/PomeloRound/studio.html`](examples/fonts/PomeloRound).
+A foundry-grade specimen app for every font:
+
+- **Type tester** with text presets, alignment, case, colourways, OpenType switches and a side-by-side comparison with system fonts
+- **Waterfall** and an **animated weight axis** for variable families
+- **Glyph inspector**: search, categories, the outline with every point and handle, metrics, copy as character or SVG
+- **Kerning explorer**: any pair, kerned and unkerned, plus the pairs that needed the most care
+- **In use**: poster, app screen, editorial page, business card, label and social post, set live
+- **Language support** counted from the font's own character set
+- **Specs**: vertical metrics, features, file list and the full QA report
+- **Install guides** for Mac, Windows, Linux, websites, Tailwind, Next.js, Figma, Canva and Word, with copy buttons
+- **Downloads**: the whole family or any single file, and a printable specimen
+
+All fonts are embedded, so it works offline, as an email attachment, hosted anywhere, or published as an artifact that opens right inside the Claude chat. A prebuilt one is in [`examples/fonts/PomeloRound/studio.html`](examples/fonts/PomeloRound).
 
 ## Install
 

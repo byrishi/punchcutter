@@ -59,7 +59,13 @@ def release(result):
         f.write(css(result))
     from .studio import build_studio
     n = sum(1 for ln in lines if ln.startswith("- "))
-    build_studio(result, qa=f"QA {n - fails - warns}/{n} pass")
+    seen, qa_lines = {}, []
+    for ln in lines:   # one line per distinct check, failing if any file fails it
+        if ln.startswith("- "):
+            lvl, msg = ln[2:].split(": ", 1)
+            seen[msg] = seen.get(msg, True) and lvl == "PASS"
+    qa_lines = [[m, ok] for m, ok in seen.items()]
+    build_studio(result, qa=f"{n - fails - warns}/{n} pass", qa_lines=qa_lines)
     spec = result["spec"]
     ws = result["weights"]
     readme = [f"# {result['family']}", "", spec.get("description", "An original typeface."), "",
