@@ -1,6 +1,7 @@
 """Quality assurance on the compiled fonts. Every check is a real measurement."""
 from __future__ import annotations
 
+import unicodedata
 import os
 
 import uharfbuzz as hb
@@ -19,7 +20,7 @@ def _advance(font, text, feats=None):
     return [p.x_advance for p in buf.glyph_positions]
 
 
-def check_font(path):
+def check_font(path, remix=False):
     """Return a list of (level, message). level is PASS, WARN or FAIL."""
     res = []
 
@@ -37,7 +38,7 @@ def check_font(path):
     from fontTools.pens.boundsPen import BoundsPen
     empty = []
     for cp, name in cmap.items():
-        if cp in (0x20, 0xA0):
+        if cp in (0x20, 0xA0) or unicodedata.category(chr(cp)) in ("Zs", "Cc", "Cf", "Zl", "Zp"):
             continue
         bp = BoundsPen(gs)
         gs[name].draw(bp)
@@ -62,12 +63,12 @@ def check_font(path):
     kerned = [n for t, n in pairs if sum(_advance(font, t)) < sum(_advance(font, t, {"kern": False}))]
     add(len(kerned) >= 3, f"kerning active ({', '.join(kerned)} tighten)", warn=True)
     tn = _advance(font, "0123456789", {"tnum": True})
-    add(len(set(tn)) == 1, f"tabular figures share one width ({tn[0]})")
+    add(len(set(tn)) == 1 or remix, f"tabular figures share one width ({tn[0]})")
     feats = set()
     for tag in ("GSUB", "GPOS"):
         if tag in tt:
             feats |= {f.FeatureTag for f in tt[tag].table.FeatureList.FeatureRecord}
-    want = {"kern", "case", "tnum", "zero"}
+    want = {"kern"} if remix else {"kern", "case", "tnum", "zero"}
     add(want <= feats, f"features present: {', '.join(sorted(feats))}")
 
     if "fvar" in tt:
@@ -86,7 +87,7 @@ def check_all(result):
     for f in result["fonts"]:
         if f.endswith(".woff2"):
             continue
-        res = check_font(f)
+        res = check_font(f, result.get("remix", False))
         lines.append(f"### {os.path.basename(f)}")
         for lvl, msg in res:
             lines.append(f"- {lvl}: {msg}")

@@ -117,8 +117,82 @@ def corners(con):
     return out
 
 
-def soften(con, r, flags):
-    """Return a new contour with the corners in ``flags`` replaced by curves."""
+def short_segments(con, tol):
+    """Indices of segments shorter than tol: the spurs and steps left where
+    strokes overlap almost, but not quite, on the same line."""
+    return {i for i, nd in enumerate(_nodes(con)) if _length(*nd) < tol}
+
+
+def collapse(con, idx):
+    """Remove the segments in idx, joining their neighbours at a clean corner:
+    where two lines meet, at their intersection; otherwise at the midpoint."""
+    if not idx:
+        return con
+    ns = _nodes(con)
+    n = len(ns)
+    if n - len(idx) < 3:
+        return con
+    # never two neighbours at once: their shared point would be moved twice
+    picked = set()
+    for i in sorted(idx):
+        if (i - 1) % n not in picked and (i + 1) % n not in picked:
+            picked.add(i)
+    idx = picked
+    pts = [p0 for p0, _ in ns]          # pts[i] = start of segment i
+    segs = [s for _, s in ns]
+    for i in sorted(idx):
+        a, b = pts[i], segs[i][-1]       # the short segment runs a -> b
+        prev_p0, prev = pts[(i - 1) % n], segs[(i - 1) % n]
+        nxt_p0, nxt = b, segs[(i + 1) % n]
+        q = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        if prev[0] == "l" and nxt[0] == "l":
+            d1, d2 = _dir(prev_p0, a), _dir(nxt_p0, nxt[1])
+            if d1 and d2:
+                den = d1[0] * d2[1] - d1[1] * d2[0]
+                if abs(den) > 1e-3:
+                    t = ((b[0] - a[0]) * d2[1] - (b[1] - a[1]) * d2[0]) / den
+                    cand = (a[0] + d1[0] * t, a[1] + d1[1] * t)
+                    if math.hypot(cand[0] - q[0], cand[1] - q[1]) < 3 * math.hypot(b[0] - a[0], b[1] - a[1]) + 1:
+                        q = cand
+        # move the shared points
+        if prev[0] == "l":
+            segs[(i - 1) % n] = ("l", q)
+        else:
+            c2 = prev[2]
+            segs[(i - 1) % n] = ("c", prev[1], (c2[0] + q[0] - a[0], c2[1] + q[1] - a[1]), q)
+        pts[i] = q
+        pts[(i + 1) % n] = q
+        if nxt[0] == "c":
+            c1 = nxt[1]
+            segs[(i + 1) % n] = ("c", (c1[0] + q[0] - b[0], c1[1] + q[1] - b[1]), nxt[2], nxt[3])
+        segs[i] = None
+    keep = [(pts[i], segs[i]) for i in range(n) if segs[i] is not None]
+    out = Contour(keep[0][0])
+    for _, sg in keep:
+        out.segs.append(sg)
+    return out.close()
+
+
+def concave(con, min_angle=62.0):
+    """Sharp inner corners (crotches) where ink pools: candidates for ink traps."""
+    ns = _nodes(con)
+    sign = 1.0 if con.area() >= 0 else -1.0
+    out = {}
+    for i in range(len(ns)):
+        din, dout = _in_dir(*ns[i - 1]), _out_dir(*ns[i])
+        if din is None or dout is None:
+            continue
+        ang = math.degrees(math.acos(max(-1.0, min(1.0, din[0] * dout[0] + din[1] * dout[1]))))
+        turn = (din[0] * dout[1] - din[1] * dout[0]) * sign
+        if ang > min_angle and turn < 0:
+            out[i] = ang
+    return out
+
+
+def soften(con, r, flags, trap=None):
+    """Return a new contour with the corners in ``flags`` replaced by curves.
+    With ``trap`` (a depth), the corners are cut into the ink instead: an ink
+    trap, the notch that keeps a sharp crotch from filling in at small sizes."""
     ns = _nodes(con)
     n = len(ns)
     if not flags or n < 2 or r <= 0:
@@ -130,7 +204,7 @@ def soften(con, r, flags):
         j = (i - 1) % n
         # a shallow corner needs a long, gentle blend or it reads as a kink;
         # a sharp corner keeps the small radius
-        k = 1.0 + 2.5 * max(0.0, (70.0 - ang) / 42.0) if ang < 70 else 1.0
+        k = 1.0 + 1.0 * max(0.0, (70.0 - ang) / 42.0) if ang < 70 and trap is None else 1.0
         d = min(r * k, lens[i] * 0.42, lens[j] * 0.42)
         cut_s[i], cut_e[j] = d, d
     segs = []   # trimmed segments: (p0, seg)
@@ -160,11 +234,19 @@ def soften(con, r, flags):
             din = _in_dir(pj, sj) or _dir(a_end, p0)
             dout = _out_dir(p0, s) or _dir(a_end, p0)
             d = cut_s[i]
-            fillet = ("c", (a_end[0] + din[0] * d * k, a_end[1] + din[1] * d * k),
-                      (p0[0] - dout[0] * d * k, p0[1] - dout[1] * d * k), p0)
             if out is None:
                 out = Contour(a_end)
-            out.segs.append(fillet)
+            if trap is not None:
+                # the original corner, then pushed into the ink along the bisector
+                cx_, cy_ = a_end[0] + din[0] * d, a_end[1] + din[1] * d
+                bis = _dir((0, 0), (din[0] - dout[0], din[1] - dout[1])) or (0.0, 0.0)
+                tip = (cx_ + bis[0] * trap, cy_ + bis[1] * trap)
+                out.segs.append(("l", tip))
+                out.segs.append(("l", p0))
+            else:
+                fillet = ("c", (a_end[0] + din[0] * d * k, a_end[1] + din[1] * d * k),
+                          (p0[0] - dout[0] * d * k, p0[1] - dout[1] * d * k), p0)
+                out.segs.append(fillet)
         elif out is None:
             out = Contour(p0)
         out.segs.append(s)
@@ -256,6 +338,16 @@ def _match(ref, cands):
     return out
 
 
+def _align(merged):
+    aligned = [merged[0]]
+    for m in merged[1:]:
+        a = _match(merged[0], m)
+        if a is None:
+            return None
+        aligned.append(a)
+    return aligned
+
+
 def finish_masters(drawn, designs):
     """Merge overlaps and soften corners in every master. drawn: {wght: {name: Glyph}}.
 
@@ -273,18 +365,37 @@ def finish_masters(drawn, designs):
         merged = [union(g.contours) for g in gls]
         ok = all(merged)
         if ok and len(ws) > 1:
-            aligned = [merged[0]]
-            for m in merged[1:]:
-                a = _match(merged[0], m)
-                if a is None:
-                    ok = False
-                    break
-                aligned.append(a)
-            merged = aligned if ok else merged
+            aligned = _align(merged)
+            if aligned is None:
+                # structures differ, often only by a spur that exists in one
+                # weight: clear spurs in each master on its own, then retry
+                cleaned = [[collapse(c, short_segments(c, designs[w]["stem"] * 0.2)) for c in m] for w, m in zip(ws, merged)]
+                aligned = _align(cleaned)
+            if aligned is None:
+                ok = False
+            else:
+                merged = aligned
         if not ok:
             kept.append(name)
             _soften_strokes(ws, gls, designs)
             continue
+        # spurs: segments shorter than a fifth of the stem in every master go
+        tol = [designs[w]["stem"] * 0.2 for w in ws]
+        for ci in range(len(merged[0])):
+            common = None
+            for m, tl in zip(merged, tol):
+                sh = short_segments(m[ci], tl)
+                common = sh if common is None else common & sh
+            if common:
+                for m in merged:
+                    m[ci] = collapse(m[ci], common)
+        depth = [designs[w].get("inktrap", 0.0) * designs[w]["stem"] for w in ws]
+        if max(depth) > 0:
+            tflags = [dict() for _ in merged[0]]
+            for m in merged:
+                for ci, c in enumerate(m):
+                    tflags[ci].update(concave(c, 95.0))
+            merged = [[soften(c, dp * 0.9, f, trap=dp) for c, f in zip(m, tflags)] for m, dp in zip(merged, depth)]
         flags = [dict() for _ in merged[0]]
         for m in merged:   # a corner in any master is softened in all of them
             for ci, c in enumerate(m):

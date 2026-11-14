@@ -25,4 +25,4 @@ A soft, friendly rounded sans for packaging, apps for kids and anything that sho
 
 SIL Open Font License 1.1
 
-Cut 2026-11-14 with Punchcutter (byrishi.github.io/punchcutter).
+Cut 2026-11-15 with Punchcutter (byrishi.github.io/punchcutter).

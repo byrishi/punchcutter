@@ -29,8 +29,8 @@ def _zip(fonts_dir, fid):
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for root, _, files in sorted(os.walk(fonts_dir)):
             for fn in sorted(files):
-                if fn == "studio.html":
-                    continue
+                if fn == "studio.html" or ("Flex[" in fn and fn.endswith(".ttf")):
+                    continue   # the lab's full design space ships in the folder, not the in-page zip
                 full = os.path.join(root, fn)
                 z.write(full, os.path.join(fid, os.path.relpath(full, fonts_dir)))
     return base64.b64encode(buf.getvalue()).decode()
@@ -84,10 +84,27 @@ def build_studio(result, qa=None, qa_lines=None):
                 files=file_list(fonts), qa=qa or "", qa_lines=qa_lines or [],
                 source=("handwriting" if spec.get("mode") == "handwriting" else spec.get("preset", "custom")),
                 tool=f"{brand.NAME} {brand.VERSION}", site=brand.SITE, repo=brand.REPO)
+    flex = result.get("flex")
+    if flex:
+        fx = os.path.join(fonts, "webfonts", flex["file"][:-4] + ".woff2")
+        if os.path.exists(fx):
+            from .presets import WEIGHT_STEM
+            d0 = result["design"]
+            if flex.get("remix"):
+                data["flex"] = dict(axes=flex["axes"], file=flex["file"], remix=True, base_name=d0.get("base_name", ""),
+                                    base=d0.get("base", ""))
+            else:
+                data["flex"] = dict(axes=flex["axes"], file=flex["file"], stemf={str(k): v for k, v in WEIGHT_STEM.items()},
+                                    base={k: d0[k] for k in ("width", "stem", "xh", "hratio", "roundness", "soften",
+                                                              "aperture", "slant")})
+            faces.append(dict(src=_b64(fx), weight=None, family="PCFLEX"))
     face_css = "\n".join(
-        f'@font-face{{font-family:"PCX";src:url(data:font/woff2;base64,{f["src"]}) format("woff2");font-weight:{f["weight"]};font-display:block}}'
+        f'@font-face{{font-family:"{f.get("family", "PCX")}";src:url(data:font/woff2;base64,{f["src"]}) format("woff2");'
+        + (f'font-weight:{f["weight"]};' if f["weight"] else "") + 'font-display:block}'
         for f in faces)
-    page = STUDIO.replace("/*FACES*/", face_css).replace("__DATA__", json.dumps(data, separators=(",", ":")))
+    from .mockups import CSS as MK_CSS, JS as MK_JS, SECTION as MK_SEC, data as mk_data
+    page = STUDIO.replace("<!--MOCKUPS-->", MK_SEC).replace("/*MKCSS*/", MK_CSS).replace("//MKJS", MK_JS.replace("__MOCKS__", mk_data()))
+    page = page.replace("/*FACES*/", face_css).replace("__DATA__", json.dumps(data, separators=(",", ":")))
     page = page.replace("__ZIP__", _zip(fonts, fid)).replace("__MARK__", brand.mark(0, 0, 32))
     word, ww = brand.wordmark(0, 17, 21, fill="currentColor")
     page = page.replace("__WORD__", word).replace("__WMW__", f"{ww:.0f}")
@@ -210,6 +227,19 @@ pre{background:var(--card);border:1px solid var(--line);border-radius:18px;paddi
 .pw{position:relative}.pw .btn{position:absolute;top:10px;right:10px}
 .lic{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:space-between}
 footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+#lab .sh{align-items:start}.labact{display:flex;gap:8px;flex-wrap:wrap}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}.presets button{border:1px solid var(--line);background:none;border-radius:999px;padding:6px 14px;cursor:pointer}
+.presets button:hover{border-color:var(--fg)}.presets button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.labgrid{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:stretch}
+.axes{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.axes label{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;color:var(--mute)}.axes b{color:var(--fg);font-weight:400;font-variant-numeric:tabular-nums}
+.axes input{grid-column:1/-1;accent-color:var(--acc);width:100%}.axes small{grid-column:1/-1;font-size:11px;opacity:.75}
+.lstage{border:1px solid var(--line);border-radius:var(--r);padding:clamp(22px,4vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:24px;min-height:420px;overflow:hidden}
+#lt{font-family:PCFLEX,sans-serif;font-size:clamp(44px,7vw,104px);line-height:1.02;outline:none;overflow-wrap:anywhere}
+.lab2{font-family:PCFLEX,sans-serif;font-size:clamp(18px,2.2vw,28px);line-height:1.3;color:var(--mute)}
+#lcss{font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--mute);overflow-wrap:anywhere}
+@media(max-width:860px){.labgrid{grid-template-columns:1fr}}
+/*MKCSS*/
 .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;transition:.2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media(max-width:980px){.uses{grid-template-columns:1fr 1fr}.uses>*{grid-column:span 1!important;grid-row:auto!important;min-height:300px}.u-poster{grid-column:span 2!important}
@@ -219,7 +249,7 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-si
  section{break-inside:avoid;padding:24px 0}.hero{min-height:360px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.use{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 <header><a class="brand" href="#top"><svg viewBox="0 0 32 32">__MARK__</svg><svg viewBox="0 0 __WMW__ 22" style="height:19px;width:auto">__WORD__</svg></a><span class="sub">studio</span>
-<nav id="nav"><a href="#tester">Tester</a><a href="#glyphs">Glyphs</a><a href="#kerning">Kerning</a><a href="#inuse">In use</a><a href="#languages">Languages</a><a href="#specs">Specs</a><a href="#install">Install</a></nav>
+<nav id="nav"><a href="#tester">Tester</a><a href="#lab" id="navlab">Design lab</a><a href="#glyphs">Glyphs</a><a href="#kerning">Kerning</a><a href="#mockups">In use</a><a href="#languages">Languages</a><a href="#specs">Specs</a><a href="#install">Install</a></nav>
 <span class="sp"></span><button class="btn" id="theme" title="Toggle dark mode (D)">Dark</button><button class="btn pri" id="dl">Download family</button></header>
 <main id="top">
 <div class="hero"><div class="kick" id="kick"></div><h1 class="pc" id="name"></h1><p id="desc"></p><div class="stats" id="stats"></div></div>
@@ -227,6 +257,11 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-si
 <section id="tester"><div class="sh"><div><div class="kicker">Type tester</div><h2>Set anything.</h2><p class="lede">Click the text and type. Every control works live, and the waterfall below follows along.</p></div></div>
 <div class="bar" id="bar1"></div><div class="bar" id="bar2"></div>
 <div class="stage" id="stage"><div id="t" class="pc" contenteditable spellcheck="false"></div><div id="cmp"><small id="cmpl"></small><div id="cmpt"></div></div></div></section>
+
+<section id="lab"><div class="sh"><div><div class="kicker">Design lab</div><h2>Shape it live.</h2><p class="lede">Every slider is a real axis of a variable font cut from this design, so every setting is still a finished, spaced and kerned font. Find the one you want, then hand the settings back to your AI to cut it as a family.</p></div>
+<div class="labact"><button class="btn" id="lreset">Reset</button><button class="btn" id="lrand">Surprise me</button><button class="btn pri" id="lcopy">Copy settings for your AI</button></div></div>
+<div class="presets" id="lpre"></div>
+<div class="labgrid"><div class="axes" id="laxes"></div><div class="lstage"><div id="lt" contenteditable spellcheck="false">Brand new letters, made to measure.</div><div class="lab2" id="labc">ABCDEFGHIJKLM nopqrstuvwxyz 0123456789 &amp;?!</div><code id="lcss"></code></div></div></section>
 
 <section id="waterfall"><div class="sh"><div><div class="kicker">Waterfall</div><h2>Every size, one rhythm.</h2></div></div><div class="wf pc" id="wf"></div></section>
 
@@ -242,15 +277,9 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mute);font-si
 <div class="kgrid"><div class="kbox"><div class="k pc" id="kon"></div><small>Kerned</small></div><div class="kbox"><div class="k pc" id="koff" style="font-kerning:none;font-feature-settings:'kern' 0"></div><small>Without kerning</small></div></div>
 <div class="pairs pc" id="pairs"></div></section>
 
-<section id="inuse"><div class="sh"><div><div class="kicker">In use</div><h2>See it at work.</h2><p class="lede">Your tester text drives the poster. Everything else is set live in this font.</p></div></div>
-<div class="uses">
-<div class="use u-poster"><div class="s"><span id="pkick">Spring edition</span><span>No. 01</span></div><h3 class="pc" id="ph" style="--w:var(--top)"></h3><div class="s"><span>Set in <b id="pfam"></b></span><span>Made with Punchcutter</span></div></div>
-<div class="use u-app"><div class="phone pc"><div class="t" style="--w:var(--top)">Good<br>morning</div><div class="c"><b>Today</b><span>3 tasks · 2 notes</span></div><div class="c"><b>Focus 25:00</b><span>Deep work, no notifications</span></div><div class="pill">Start session</div></div></div>
-<div class="use u-edit pc"><h3 style="--w:var(--top)">The quiet craft of letters</h3><p>Every typeface begins as a question about rhythm: how the black of a stroke answers the white beside it. Spacing is half the work, and the half no reader notices when it is done well. A good family keeps that rhythm from the heaviest headline to the smallest caption.</p></div>
-<div class="use u-card pc"><div><div class="n" style="--w:var(--top)" id="cname"></div><div class="r">Type foundry · Studio</div></div><div class="row"><span>hello@studio.example<br>+00 000 000 000</span><span id="cyr"></span></div></div>
-<div class="use u-label pc"><div class="jar"><div class="a">Small batch</div><div class="b" style="--w:var(--top)">Honey</div><div class="c">Wildflower · 250 g</div></div></div>
-<div class="use u-social pc"><div class="q" style="--w:var(--top)">&ldquo;Make the thing you wish existed.&rdquo;</div><div class="h"><svg viewBox="0 0 32 32" width="28" height="28">__MARK__</svg><span>@punchcutter · set in <b id="sfam"></b></span></div></div>
-</div></section>
+
+
+<!--MOCKUPS-->
 
 <section id="languages"><div class="sh"><div><div class="kicker">Language support</div><h2 id="ltitle">Languages</h2><p class="lede">Counted from the font's own character set. A language is supported when every letter it needs is present.</p></div></div><div class="langs" id="langs"></div></section>
 
@@ -292,7 +321,7 @@ function apply(){t.style.fontSize=st.size+'px';t.style.setProperty('--w',st.w);t
  const fs=[...st.f].map(f=>'"'+f+'" 1');if(!st.kern)fs.push('"kern" 0');const ff=fs.join(',')||'normal';t.style.fontFeatureSettings=ff;
  const c=$('#cmp');c.style.display=st.cmp?'block':'none';if(st.cmp){const ct=$('#cmpt');ct.textContent=txt();Object.assign(ct.style,{fontFamily:st.cmp,fontSize:st.size+'px',lineHeight:st.lh,letterSpacing:st.track/1000+'em',textAlign:st.align,textTransform:st.case,fontWeight:st.w>=600?700:400})}
  $$('#wf div').forEach(d=>{d.style.setProperty('--w',st.w);d.lastChild.textContent=txt().replace(/\s+/g,' ');d.style.fontFeatureSettings=ff});
- const ph=$('#ph');ph.textContent=txt().split(/\s+/).slice(0,3).join(' ');let fz=110;ph.style.fontSize=fz+'px';while(fz>28&&(ph.scrollWidth>ph.clientWidth+1||ph.scrollHeight>360)){fz-=4;ph.style.fontSize=fz+'px'}}
+}
 function range(bar,label,min,max,step,key,fmt){const l=el('label');const i=el('input');Object.assign(i,{type:'range',min,max,step,value:st[key]});i.id='r-'+key;
  const v=el('b','',fmt(st[key]));i.oninput=()=>{st[key]=+i.value;v.textContent=fmt(st[key]);apply()};l.append(label,i,v);bar.append(l);return i}
 const b1=$('#bar1'),b2=$('#bar2');
@@ -362,7 +391,7 @@ function kern(){const p=$('#kp').value||'AV';$('#kon').textContent=p;$('#koff').
 $('#kp').addEventListener('input',kern);
 D.kern.slice(0,60).forEach(([p,v])=>{const b=el('button','',esc(p)+'<em>'+v+'</em>');b.onclick=()=>{$('#kp').value=p;kern()};$('#pairs').append(b)});
 // ---------------------------------------------------------------- in use
-$('#pfam').textContent=D.family;$('#sfam').textContent=D.family;$('#cname').textContent=D.family;$('#cyr').textContent='Est. '+new Date().getFullYear();
+
 // ---------------------------------------------------------------- languages
 $('#ltitle').textContent=langsOK+' of '+D.languages.length+' Latin languages';
 D.languages.slice().sort((a,b)=>b[1]-a[1]).forEach(([n,ok,miss])=>$('#langs').append(el('div',ok?'ok':'no',esc(n)+(ok?'':'<em>needs '+esc(miss)+'</em>'))));
@@ -408,12 +437,40 @@ async function one(path){const a=bytes(),v=new DataView(a.buffer);let e=a.length
    save(new Blob([out]),path.split('/').pop());return}
   p+=46+nl+xl+cl}toast('File not found')}
 $('#dl').onclick=family;$('#dl2').onclick=family;
+// ---------------------------------------------------------------- design lab
+if(!D.flex){$('#lab').remove();$('#navlab').remove()}else{
+ const AX=D.flex.axes,HELP={wght:'Stem thickness',wdth:'Letter width and spacing',YTLC:'Height of the lowercase',YOPQ:'Horizontal strokes, relative to stems',
+  SQAR:'Round curves to squarish ones',SOFT:'Radius of every corner',APRT:'How open c e s a are',slnt:'Lean, in degrees'};
+ const lv={};if(D.flex.remix){$('#lab .lede').textContent='Every slider is a real axis of '+D.flex.base_name+', the open-source font this family is remixed from. Find the setting you want, then hand it back to your AI to cut it as a family.'}const defs=()=>AX.forEach(a=>lv[a[0]]=a[3]);defs();
+ const clamp=(t,v)=>{const a=AX.find(x=>x[0]===t);return a?Math.min(a[4],Math.max(a[2],v)):v};
+ function lapply(){const fv=AX.map(a=>`'${a[0]}' ${Math.round(lv[a[0]])}`).join(', ');['#lt','#labc'].forEach(q=>$(q).style.fontVariationSettings=fv);
+  $('#lcss').textContent=`font-family: "${D.family} Flex"; font-variation-settings: ${fv};`;
+  AX.forEach(a=>{const i=$('#ax-'+a[0]);if(i){i.value=lv[a[0]];i.nextSibling&&0;$('#axv-'+a[0]).textContent=Math.round(lv[a[0]])}})}
+ AX.forEach(a=>{const [tag,name,mn,df,mx]=a;const l=el('label');const i=el('input');Object.assign(i,{type:'range',min:mn,max:mx,step:1,value:df});i.id='ax-'+tag;
+  const v=el('b','',df);v.id='axv-'+tag;i.oninput=()=>{lv[tag]=+i.value;$$('#lpre button').forEach(b=>b.classList.remove('on'));lapply()};
+  l.append(name,v,i,el('small','',HELP[tag]||''));$('#laxes').append(l)});
+ const Y=(AX.find(a=>a[0]==='YTLC')||[0,0,0,500])[3];
+ const LP={'Text':{wght:420,YTLC:Y+30,APRT:60,wdth:102},'Display':{wght:760,YTLC:Y-30,wdth:92,YOPQ:78},'Condensed':{wght:620,wdth:75},'Wide':{wght:520,wdth:122,YTLC:Y+10},
+  'Soft':{wght:640,SOFT:100,SQAR:8},'Technical':{wght:520,SQAR:92,SOFT:4,APRT:8},'Hairline':{wght:300,YOPQ:62,wdth:108},'Leaning':{slnt:-10,wght:560}};
+ Object.keys(LP).forEach(k=>{const b=el('button','',k);b.onclick=()=>{defs();Object.entries(LP[k]).forEach(([t,v])=>{if(AX.some(a=>a[0]===t))lv[t]=clamp(t,v)});$$('#lpre button').forEach(x=>x.classList.toggle('on',x===b));lapply()};$('#lpre').append(b)});
+ $('#lreset').onclick=()=>{defs();$$('#lpre button').forEach(b=>b.classList.remove('on'));lapply()};
+ $('#lrand').onclick=()=>{AX.forEach(([t,,mn,df,mx])=>{const r=Math.random(),k=t==='slnt'?(r<.7?0:mn*Math.random()):df+(r-.5)*(mx-mn)*.8;lv[t]=clamp(t,k)});$$('#lpre button').forEach(b=>b.classList.remove('on'));lapply()};
+ $('#lcopy').onclick=()=>{if(D.flex.remix){const ax={};AX.forEach(([t,,,df])=>{if(t!=='wght'&&Math.round(lv[t])!==Math.round(df))ax[t]=Math.round(lv[t])});
+  return copy(`Cut a new version of ${D.family} with Punchcutter (remix of ${D.flex.base_name}) using these axis settings from the Design lab:\n\n"remix": {"axes": ${JSON.stringify(ax)}}\n\nMerge them into the existing remix axes, keep everything else the same and build the full family.`,'Settings copied. Paste them to your AI.')}
+ const b=D.flex.base,sf=D.flex.stemf;const f=w=>{const ks=Object.keys(sf).map(Number).sort((x,y)=>x-y);for(let i=0;i<ks.length-1;i++)if(w>=ks[i]&&w<=ks[i+1])return sf[ks[i]]+(sf[ks[i+1]]-sf[ks[i]])*(w-ks[i])/(ks[i+1]-ks[i]);return w<ks[0]?sf[ks[0]]:sf[ks[ks.length-1]]};
+  const g=t=>lv[t]===undefined?null:lv[t];const d={};
+  if(g('wght')!==null)d.stem=Math.round(b.stem*f(g('wght')));if(g('wdth')!==null)d.width=+(b.width*g('wdth')/100).toFixed(3);if(g('YTLC')!==null)d.xh=Math.round(g('YTLC'));
+  if(g('YOPQ')!==null)d.hratio=+(g('YOPQ')/100).toFixed(3);if(g('SQAR')!==null)d.roundness=+(0.5523+0.2277*g('SQAR')/100).toFixed(4);
+  if(g('SOFT')!==null)d.soften=+(0.01+0.31*g('SOFT')/100).toFixed(3);if(g('APRT')!==null)d.aperture=+(g('APRT')/100).toFixed(2);if(g('slnt')!==null&&g('slnt')!==0)d.slant=-Math.round(g('slnt'));
+  copy(`Cut a new version of ${D.family} with Punchcutter using these design settings from the Design lab:\n\n"design": ${JSON.stringify(d,null,1)}\n\nKeep everything else the same and build the full family.`,'Settings copied. Paste them to your AI.')};
+ lapply()}
+//MKJS
 // ---------------------------------------------------------------- theme, nav
 const isDark=()=>{const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
 const setTheme=t=>{document.documentElement.dataset.theme=t;$('#theme').textContent=t==='dark'?'Light':'Dark';try{localStorage.setItem('pc-theme',t)}catch(e){}show(gsel)};
 $('#theme').onclick=()=>setTheme(isDark()?'light':'dark');
 try{const t=localStorage.getItem('pc-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}$('#theme').textContent=isDark()?'Light':'Dark';
-const secs=['tester','glyphs','kerning','inuse','languages','specs','install'];
+const secs=['tester','lab','glyphs','kerning','mockups','languages','specs','install'];
 addEventListener('scroll',()=>{let cur='';secs.forEach(s=>{const r=document.getElementById(s).getBoundingClientRect();if(r.top<140)cur=s});$$('#nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+cur))},{passive:true});
 apply();grid();kern();document.fonts.ready.then(()=>show(gsel));addEventListener('resize',()=>show(gsel));
 </script></body></html>

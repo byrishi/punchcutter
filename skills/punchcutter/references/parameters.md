@@ -43,6 +43,10 @@ Anything you leave out comes from the preset, then from the defaults below.
 | `serif_weight` | 1.0 | Slab thickness relative to horizontal strokes. |
 | `slant` | 0 | Degrees of lean (oblique). |
 | `a` | "double" | Default form of a: `"double"` or `"single"` storey. The other form becomes `ss01`. |
+| `stress` | "expansion" | Stroke model (Noordzij). `"expansion"`: thickness follows steepness, vertical stress (grotesques, Didones). `"translation"`: a broad nib, diagonal stress (humanist and old-style). |
+| `stress_angle` | 0 | Tilt of the stress axis in degrees; for `"translation"` the nib angle (25 to 35 is calligraphic). |
+| `inktrap` | 0 | Ink traps cut into sharp crotches (v w y k M), in stems. 0.15 subtle, 0.25 visible display detail. |
+| `soften` | 0.07 | Corner radius in stems. 0 knife-sharp, 0.3 soft rounded. |
 
 ## Rhythm
 

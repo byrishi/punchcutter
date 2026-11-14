@@ -2,6 +2,19 @@
 
 All notable changes to Punchcutter. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-11-15
+
+### Added
+- Parametric Flex font with every drawn family: eight axes (wght, wdth, YTLC, YOPQ, SQAR, SOFT, APRT, slnt) from additive masters.
+- Studio Design lab: live sliders on every axis, presets, Surprise me, and settings copied back to the AI as a spec.
+- Studio In use: eight photographic mockups (poster, business cards, storefront, coffee bag, billboard, tote, book, phone). Type is projected onto each surface with WebGL and multiplied into the photo; name, line, weight and colourway are editable and each scene exports as PNG. Photos were generated for Punchcutter and ship with it.
+- Route 6, Open base: remix an SIL OFL variable font (Roboto Flex, Noto Sans and Serif, Inter, Fraunces, Recursive, Noto Sans Devanagari and Gujarati, or any OFL file) with pinned axes, tracking, slant and corner rounding; renamed and released under the OFL. `punchcutter bases` lists the catalog.
+- Stroke models (expansion and translation with a stress angle), ink traps and spur cleanup in the engine.
+
+### Changed
+- QA no longer flags spaces and format characters as empty glyphs.
+- m keeps its middle stem straight up to the second shoulder, removing a dent at the join in heavy weights.
+
 ## [1.2.0] - 2026-11-14
 
 ### Added

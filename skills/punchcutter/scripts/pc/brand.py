@@ -16,7 +16,7 @@ import random
 import sys
 
 NAME = "Punchcutter"
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 TAGLINE = "Describe a typeface. Get a font family."
 SITE = "byrishi.github.io/punchcutter"
 REPO = "github.com/byrishi/punchcutter"
@@ -252,6 +252,7 @@ MENU = [
     ("quick-photo", "Quick photo", "A photo of any writing or lettering. No sheet needed."),
     ("mood", "Match a mood", "Send a picture you love. Get an original family with that feeling."),
     ("remix", "Remix", "Change a Punchcutter font: weight, width, spacing, single letters."),
+    ("open", "Open base", "Start from a free font with wide script coverage and reshape it."),
 ]
 
 

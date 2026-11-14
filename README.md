@@ -10,7 +10,7 @@ Every word in the images on this page is set in a font Punchcutter made. **Docs:
 
 <p align="center"><img src="assets/gallery.png" alt="Five families made with Punchcutter" width="100%"></p>
 
-## Five ways in
+## Six ways in
 
 ```
 ✦ punchcutter  ·  type foundry
@@ -20,7 +20,10 @@ Every word in the images on this page is set in a font Punchcutter made. **Docs:
   3  Quick photo        A photo of any writing or lettering. No sheet needed.
   4  Match a mood       Send a picture you love. Get an original family with that feeling.
   5  Remix              Change a Punchcutter font: weight, width, spacing, single letters.
+  6  Open base          Start from a free font with wide script coverage and reshape it.
 ```
+
+**Or start from an open font.** Route 6 takes an SIL OFL variable font with wide coverage (Roboto Flex, Noto Sans and Serif, Inter, Fraunces, Recursive, Noto Sans Devanagari and Gujarati) and reshapes it: pin any axis, track, slant, round the corners. The remix ships under the OFL with a new name and the original credited.
 
 **Describe it**
 
@@ -64,11 +67,14 @@ A foundry-grade specimen app for every font:
 - **Waterfall** and an **animated weight axis** for variable families
 - **Glyph inspector**: search, categories, the outline with every point and handle, metrics, copy as character or SVG
 - **Kerning explorer**: any pair, kerned and unkerned, plus the pairs that needed the most care
-- **In use**: poster, app screen, editorial page, business card, label and social post, set live
+- **Design lab**: a live slider for every axis of the font's parametric design space (weight, width, x-height, thin strokes, squareness, softness, aperture, slant), presets, Surprise me, and a button that copies the settings back to your AI to cut the family
+- **In use**: eight photographs (street poster, business cards, storefront, coffee bag, billboard, tote, book cover, phone) with the type mapped onto each surface in true perspective and printed into the photo, so folds, weave and shadows fall across it; your name, line, weight and colourway; download any scene as a PNG
 - **Language support** counted from the font's own character set
 - **Specs**: vertical metrics, features, file list and the full QA report
 - **Install guides** for Mac, Windows, Linux, websites, Tailwind, Next.js, Figma, Canva and Word, with copy buttons
 - **Downloads**: the whole family or any single file, and a printable specimen
+
+<p align="center"><img src="assets/mockups.jpg" alt="Burin Grotesk set live in the Studio's photo mockups" width="100%"></p>
 
 All fonts are embedded, so it works offline, as an email attachment, hosted anywhere, or published as an artifact that opens right inside the Claude chat. A prebuilt one is in [`examples/fonts/PomeloRound/studio.html`](examples/fonts/PomeloRound).
 

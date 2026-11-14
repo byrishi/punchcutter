@@ -215,6 +215,9 @@ def m(g):
     span = (g.nw - T) * 0.93
     g.stem(T / 2, 0, g.xh, sb="f", st="l")
     g.arch(T, T + span, g.xh, sb="f")
+    # the middle stem stays straight up to where the second arch branches,
+    # otherwise the first arch's curve leaves a dent below the join
+    g.stem(T + span - T / 2, T, g.xh * g.branch + T * 0.1, cap0="butt", cap1="butt")
     g.arch(T + span, T + 2 * span, g.xh, sb="f")
 
 
@@ -265,8 +268,9 @@ def _s(g, w, H, T):
     w = w + T * 0.42 * heavy
     spine = 1.0 - 0.1 * heavy
     from .geometry import Pen, Stroke
-    hf = g.hf * (1.0 - 0.2 * heavy)       # lighter horizontals, open counters
-    pen = Pen(hratio=hf, roundness=g.pen.k)
+    pen = Pen(hratio=g.pen.hratio * (1.0 - 0.2 * heavy), roundness=g.pen.k,   # lighter horizontals, open counters
+              stress=g.pen.stress, angle=math.degrees(g.pen.angle))
+    hf = pen.factor((1.0, 0.0))
     h, os = T * hf, g.os
     cx = w / 2
     top, bot = H + os - h / 2, -os + h / 2

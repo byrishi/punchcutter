@@ -167,7 +167,9 @@ def measure(ttfs):
                 b = [g.xMin, g.yMin, g.xMax, g.yMax]
         rows.append([ch, f"U+{cp:04X}", uname, adv, cat, name, b])
         names.append(name)
-    shapes = {w: outlines(p, names) for w, p in ttfs.items()}
+    # outlines for the inspector: the regular and the heaviest weight keep the page light
+    first_w, heavy_w = next(iter(ttfs)), max(ttfs)
+    shapes = {w: outlines(p, names) for w, p in ttfs.items() if w in (first_w, heavy_w)}
     os2 = f["OS/2"]
     metrics = dict(upm=f["head"].unitsPerEm, asc=os2.sTypoAscender, desc=os2.sTypoDescender,
                    cap=getattr(os2, "sCapHeight", 700), xh=getattr(os2, "sxHeight", 500),

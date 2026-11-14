@@ -157,13 +157,31 @@ class Pen:
     ``thick * hratio`` (optical correction plus contrast).
     """
 
-    def __init__(self, hratio=0.9, power=1.5, roundness=KAPPA):
+    def __init__(self, hratio=0.9, power=1.5, roundness=KAPPA, stress="expansion", angle=0.0):
         self.hratio = hratio
         self.power = power
         self.k = roundness
+        # Noordzij's stroke models. Expansion (pointed pen): thickness follows
+        # the stroke's steepness, so stress is vertical; ``angle`` tilts that
+        # axis. Translation (broad nib held at ``angle``): thickness follows
+        # the stroke's angle to the nib, giving diagonal stress.
+        self.stress = stress
+        self.angle = math.radians(angle)
+        self._norm = 1.0
+        if stress == "translation":
+            self._norm = self._raw((0.0, 1.0))
+
+    def _raw(self, d):
+        if self.stress == "translation":
+            a = math.atan2(d[1], d[0])
+            return self.hratio + (1 - self.hratio) * abs(math.sin(a - self.angle))
+        if self.angle:
+            c, s = math.cos(-self.angle), math.sin(-self.angle)
+            d = (d[0] * c - d[1] * s, d[0] * s + d[1] * c)
+        return self.hratio + (1 - self.hratio) * abs(d[1]) ** self.power
 
     def factor(self, d):
-        return self.hratio + (1 - self.hratio) * abs(d[1]) ** self.power
+        return min(1.0, self._raw(d) / self._norm)
 
 
 class Stroke:

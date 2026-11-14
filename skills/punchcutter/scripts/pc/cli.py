@@ -2,6 +2,7 @@
 
   punchcutter menu                              the five ways to make a font
   punchcutter presets                           list the style presets
+  punchcutter bases                             list open-source base fonts for route 6
   punchcutter new "Family" --preset P           write a starter spec
   punchcutter build spec.json [--draft]         run the foundry pipeline
   punchcutter glyph spec.json a g R             close-up of single glyphs
@@ -56,6 +57,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("menu")
     sub.add_parser("presets")
+    sub.add_parser("bases", help="list open-source base fonts for the remix route")
     sub.add_parser("mcp", help="run as an MCP server (add --http for ChatGPT)")
     n = sub.add_parser("new")
     n.add_argument("family")
@@ -94,6 +96,12 @@ def main(argv=None):
 
     if a.cmd == "menu":
         print(brand.menu_text())
+        return 0
+    if a.cmd == "bases":
+        from .remix import BASES
+        for k, (_, nm, note) in BASES.items():
+            print(f"{k:22s} {nm}: {note}")
+        print("\nAll SIL Open Font License. Remixes ship under the OFL with a new name.")
         return 0
     if a.cmd == "presets":
         from .presets import PRESETS

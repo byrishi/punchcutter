@@ -37,7 +37,7 @@ class Log:
         self.n += 1
         self.report.append({"stage": title, "notes": []})
         if not self.quiet:
-            print(f"\n[{self.n}/9] {title}")
+            print(f"\n[{self.n}] {title}")
 
     def note(self, text):
         self.report[-1]["notes"].append(text)
@@ -523,6 +523,9 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
     spec = load_spec(spec_path)
     fam = spec["family"]
     fam_id = fam.replace(" ", "")
+    if spec.get("mode") == "remix":
+        from .remix import build_remix
+        return build_remix(spec, out_dir, formats, log)
 
     log.stage("Brief")
     from .handwriting import load_traced
@@ -628,9 +631,25 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
                 dst = os.path.join(wd, os.path.basename(f)[:-4] + ".woff2")
                 _woff2(f, dst)
                 made.append(dst)
+    flex = None
+    if variable and spec.get("parametric", True) and not custom and spec.get("mode") != "handwriting":
+        log.stage("Design lab")
+        from .parametric import build_parametric
+        tmp = os.path.join(fonts, "variable", f"{fam_id}Flex.ttf")
+        path, axes = build_parametric(spec, design, tmp, os.path.join(work, "flex"), log)
+        named = os.path.join(fonts, "variable", f"{fam_id}Flex[{','.join(a[0] for a in axes)}].ttf")
+        os.replace(path, named)
+        _finish_ttf(named)
+        made.append(named)
+        if "woff2" in formats:
+            dst = os.path.join(fonts, "webfonts", os.path.basename(named)[:-4] + ".woff2")
+            _woff2(named, dst)
+            made.append(dst)
+        shutil.rmtree(os.path.join(work, "flex"), ignore_errors=True)
+        flex = dict(file=os.path.basename(named), axes=[list(a[:5]) for a in axes])
     for f in made:
         log.note(f"{os.path.relpath(f, out_dir)}  {os.path.getsize(f) / 1024:.0f} KB")
 
     result = dict(family=fam, family_id=fam_id, out=out_dir, fonts=made, weights=weights, masters=list(masters),
-                  variable=variable, design=design, spec=spec, log=log)
+                  variable=variable, design=design, spec=spec, log=log, flex=flex)
     return result

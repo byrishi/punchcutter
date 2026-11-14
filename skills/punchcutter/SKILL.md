@@ -25,6 +25,7 @@ step. If they gave no name, invent one.
   3  Quick photo        A photo of any writing or lettering. No sheet needed.
   4  Match a mood       Send a picture you love. Get an original family with that feeling.
   5  Remix              Change a Punchcutter font: weight, width, spacing, single letters.
+  6  Open base          Start from a free font with wide script coverage and reshape it.
 
   Pick a number, or just tell me what you want.
 ```
@@ -130,12 +131,32 @@ For a font made here. Open its spec, change what was asked ("bolder": raise
 For handwriting fonts use `--neat` and `--ink`. Fonts not made with Punchcutter
 cannot be opened; offer to design something new.
 
+## Route 6: Open base
+
+When the user wants a script Punchcutter does not draw (Greek, Cyrillic,
+Vietnamese, Devanagari, Gujarati), a huge character set, or a refined
+grotesque fast. Start from an SIL OFL variable font and reshape it:
+
+```json
+{"family": "Kiln Sans", "mode": "remix", "base": "roboto-flex", "weights": [300, 400, 700, 900],
+ "remix": {"axes": {"wdth": 88, "YTLC": 545}, "tracking": 8, "slant": 0, "round": 0}}
+```
+
+`punchcutter bases` lists the catalog (Roboto Flex with 13 parametric axes,
+Noto Sans/Serif/Mono, Inter, Fraunces, Recursive, Noto Sans Devanagari and
+Gujarati); a path to any OFL `.ttf` also works. `axes` pins any axis of the
+base, `tracking` adds units per em, `slant` leans in degrees, `round` (0 to 1)
+rounds straight corners (static fonts only). Tell the user plainly: the result
+is a derivative, so it ships under the OFL with the original credited and a new
+name; they own their changes, not the base design. For a fully owned font use
+route 1.
+
 ## What the release contains
 
 | Path | What it is |
 | --- | --- |
-| `fonts/studio.html` | the font's app: tester, waterfall, glyph inspector with outline points, kerning explorer, layouts in use, language support, specs and QA, install guides, per-file downloads |
-| `fonts/variable/` | one variable font with a weight axis (drawn fonts) |
+| `fonts/studio.html` | the font's app: tester, Design lab (live sliders on every axis, presets, copy settings back to the AI), photo mockups (poster, cards, storefront, coffee bag, billboard, tote, book, phone; type projected into real photos, PNG export), waterfall, glyph inspector with outline points, kerning explorer, layouts in use, language support, specs and QA, install guides, per-file downloads |
+| `fonts/variable/` | a weight-axis variable font, plus `<Family>Flex[...]`: the full parametric design space behind the Design lab |
 | `fonts/ttf/`, `fonts/otf/` | static desktop fonts |
 | `fonts/webfonts/`, `fonts/<Family>.css` | WOFF2 and ready `@font-face` rules |
 | `proof.png` | proof sheet |
@@ -152,7 +173,7 @@ cannot be opened; offer to design something new.
 
 ## Honest limits
 
-- Latin only: Basic Latin, Latin-1 and Latin Extended-A accents.
+- Drawn fonts are Latin only (Basic Latin, Latin-1, Latin Extended-A); route 6 covers other scripts through an OFL base.
 - Upright styles; `slant` gives an oblique, not a true italic. Sans and slab designs.
 - Handwriting fonts are static weights (no variable font) and print-style: letters
   do not join, so connected cursive comes out as separate letters.

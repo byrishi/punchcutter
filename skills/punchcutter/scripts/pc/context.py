@@ -37,6 +37,10 @@ DEFAULTS = dict(
     spacing=1.0,       # global letter-spacing factor
     kerning=1.0,       # kerning strength, 0 disables
     soften=0.07,       # corner radius in stems: 0 = knife-sharp, 0.3 = rounded-sans soft
+    # stroke model (Noordzij): 'expansion' = vertical stress, 'translation' = broad nib
+    stress="expansion",
+    stress_angle=0.0,  # degrees: tilt of the stress axis, or the nib angle for translation
+    inktrap=0.0,       # depth of ink traps in sharp inner corners, in stems (0 = none, 0.25 = deep)
 )
 
 
@@ -62,14 +66,15 @@ class G:
         k = scale
         self.cap, self.xh = p["cap"] * k, p["xh"] * k
         self.asc, self.desc = p["asc"] * k, p["desc"] * k
-        self.os = p["overshoot"] * k
+        # flatter, squarer curves linger at the baseline and need less overshoot
+        self.os = p["overshoot"] * k * max(0.5, min(1.15, 1 - (p["roundness"] - 0.5523) * 2.2))
         self.s = p["stem"] * stem_scale
         self.S = p["stem"] * p["cap_stem"] * stem_scale
         self.F = p["stem"] * (1 + (p["cap_stem"] - 1) * 0.6) * stem_scale
         self.wd = p["width"]
         hr = p["hratio"] * (1 - p["contrast"])
-        self.pen = Pen(hratio=hr, roundness=p["roundness"])
-        self.hf = hr
+        self.pen = Pen(hratio=hr, roundness=p["roundness"], stress=p["stress"], angle=p["stress_angle"])
+        self.hf = self.pen.factor((1.0, 0.0))
         self.join, self.branch, self.ap = p["join"], p["branch"], p["aperture"]
         self.contrast = p["contrast"]
         self.round = p["terminal"] == "round"

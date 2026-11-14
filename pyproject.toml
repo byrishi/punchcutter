@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "punchcutter"
-version = "1.2.0"
+version = "1.3.0"
 description = "A type foundry for Claude and other AI agents. Describe a typeface, get a font family."
 readme = "README.md"
 license = { text = "MIT" }
@@ -32,4 +32,4 @@ package-dir = { "pc" = "skills/punchcutter/scripts/pc" }
 packages = ["pc"]
 
 [tool.setuptools.package-data]
-pc = ["brand_fonts/*.ttf"]
+pc = ["brand_fonts/*.ttf", "assets/mockups/*.jpg"]
