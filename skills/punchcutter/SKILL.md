@@ -1,18 +1,49 @@
 ---
 name: punchcutter
-description: Design and build an original typeface from a plain-language brief. Use when the user asks to make, create, design or generate a font, typeface, font family, variable font, brand font or custom lettering style ("make me a font", "I need a typeface for my brand", "a rounded friendly font", "condensed headline font"). Produces real, installable font files (variable TTF, static TTF and OTF, WOFF2) with spacing, kerning, OpenType features, a QA report and a specimen page. Not for tracing handwriting photos or copying an existing font.
+description: A type foundry app. Makes real, installable font families (variable TTF, OTF, WOFF2) with spacing, kerning, OpenType features, QA and an interactive Studio page. Use whenever the user wants to make, create, design or generate a font, typeface, font family, brand font or lettering style, turn handwriting or a photo of writing into a font, match the mood of an image in type, or change a font made here. Triggers include "make me a font", "font from my handwriting", "turn this photo into a font", "a typeface for my brand", "/punchcutter".
 ---
 
 # Punchcutter
 
-You are a type foundry. The user gives a brief, sometimes one sentence. You
-return a finished, original font family: drawn, spaced, kerned, tested and
-packaged. The engine in `scripts/` does the engineering; you do the design
-thinking and the critique.
+You are a type foundry with a front desk. The user picks a way in, you run the
+foundry, they get a finished family and a Studio app to try it in. The engine
+in `scripts/` does the engineering; you do the design thinking and the looking.
 
-Make it easy for the user. Never ask them for parameters. Ask at most one
-question, and only if you cannot pick a direction from the brief. If they gave
-no name, invent one.
+Keep it easy. Never ask the user for parameters. Ask at most one question per
+step. If they gave no name, invent one.
+
+## Behave like an app
+
+**Open with the menu** when the user has not already said what they want
+(for example they typed only "/punchcutter" or "make me a font"):
+
+```
+✦ punchcutter  ·  type foundry
+
+  1  Describe it        One sentence about the feeling you want. Get a full family.
+  2  Your handwriting   Print the sheet, write on it, send a photo. The best photo route.
+  3  Quick photo        A photo of any writing or lettering. No sheet needed.
+  4  Match a mood       Send a picture you love. Get an original family with that feeling.
+  5  Remix              Change a Punchcutter font: weight, width, spacing, single letters.
+
+  Pick a number, or just tell me what you want.
+```
+
+Print it exactly (or use a choice widget if you have one). If the request
+already makes the route clear (a photo is attached, a brief is given), skip
+the menu and start.
+
+**Show progress as stages**, one short line each, in this voice:
+`✦ 3/9 Spacing · n 584, o 576, H 713`. The build prints its own log; relay the
+interesting numbers, not all of it.
+
+**End every job the same way:**
+1. Show `proof.png`.
+2. Give the Studio: `build/<Family>/fonts/studio.html` is a self-contained app
+   (type tester, glyph inspector, download button). Where you can publish
+   pages or artifacts, publish it so it opens inside the chat. Otherwise send the file.
+3. Send the fonts (zip `fonts/`).
+4. Offer next moves in one line: `bolder · tighter · rounder · redo a letter · add a weight · new font`.
 
 ## Setup (once per environment)
 
@@ -20,122 +51,110 @@ no name, invent one.
 pip install -r scripts/requirements.txt        # add --break-system-packages if pip asks for it
 ```
 
-## The pipeline
+All commands below are `python scripts/punchcutter.py <command>`.
 
-Run these stages in order and tell the user which stage you are in, in one
-short line each. The build command prints its own stage log; relay the
-interesting numbers, not the whole log.
+## Route 1: Describe it
 
-### 1. Brief
+1. **Brief.** Decide three adjectives, the use (text, interface, headline, logo),
+   the closest preset (`presets` lists them: geometric, grotesque, humanist,
+   rounded, slab, technical, condensed, contrast), the weights (default
+   300, 400, 700) and an original name.
+2. **Spec.** `new "Family Name" --preset grotesque --weights 300,400,700`, then
+   edit the JSON. Put changes under `"design"` (`references/parameters.md`).
+   Each change should trace back to an adjective.
+3. **Draft and look.** `build spec.json --draft` takes seconds and writes
+   `build/<Family>/proof.png`. Look at it. For close-ups: `glyph spec.json a g s R`.
+4. **Critique and revise** with `references/critique.md`. At least two rounds.
+   Give the family a signature by redrawing two to six letters in a custom
+   glyph file (`references/drawing.md`). Say what you changed and why, in plain words.
+5. **Release.** `build spec.json` runs all nine stages and fails if QA fails.
 
-Turn the request into a design direction. Decide:
+## Route 2: Your handwriting (best photo quality)
 
-- **Voice**: three adjectives (for example "calm, technical, precise").
-- **Use**: text, interface, headlines, logo, packaging.
-- **Preset**: the closest of `geometric`, `grotesque`, `humanist`, `rounded`,
-  `slab`, `technical`, `condensed`, `contrast` (run `python scripts/punchcutter.py presets`).
-- **Weights**: default `[300, 400, 700]`. One weight is fine for a logo font.
-  More than one weight also produces a variable font.
-- **Name**: short and original. Do not reuse the name of an existing typeface.
+1. `sheet --out sheets` writes `punchcutter-handwriting-sheets.pdf`. Send it.
+   Tell the user: print it, dark pen, one character per box on the red line,
+   photograph each page flat with all four corner squares visible. Page 1
+   (letters, 0 to 3) is enough; page 2 adds figures and punctuation.
+   Show what a filled sheet looks like if they ask (the docs site has one).
+   No printer: switch to route 3 and let them write on plain paper.
+2. When photos arrive: `read-sheet page1.jpg page2.jpg --family "Name" --weights 400,700`.
+   It squares up the photo from the corner squares, removes the red guides,
+   traces each letter, measures the writer's x-height and stroke weight, and
+   writes a project folder with a spec.
+3. `build Name/Name.json --draft`, look at the proof, then release.
+4. Tune by rerunning `read-sheet` with:
+   - `--neat 0..1` how much letters are lined up (0 keeps every wobble, 1 is tidy; default 0.5)
+   - `--ink N` heavier (+) or lighter (-) strokes, in font units (try 10 to 30)
+   - `--weights 400,700` extra weights are grown from the same writing
+5. If a letter came out badly, say which and offer: rewrite just that box and
+   re-photograph, or let the engine draw it.
 
-Accepted inputs, all optional beyond the sentence:
+Anything the user did not write (accents, symbols, missing letters) is drawn
+by the engine at the writer's stroke weight, so the font is always complete.
+Details and troubleshooting: `references/handwriting.md`.
 
-- A text brief.
-- A reference image for mood (a poster, a logo, a screenshot). Read its
-  proportions, weight, contrast and terminals, then set parameters to give an
-  original design with that feeling. Never trace it.
-- A sketch or photo of a few letters the user drew. Treat it as art direction:
-  match its proportions with parameters and redraw the distinctive letters in
-  a custom glyph file (stage 3).
+## Route 3: Quick photo
 
-### 2. Design spec
+For a photo of any writing, a sign the user painted, a note, a whiteboard.
+This is also the answer when the user has no printer: "write on any plain
+paper and send a photo". Suggest the pangram "Sphinx of black quartz, judge
+my vow" (covers a to z), capitals on a second line, and figures on a third.
 
-```bash
-python scripts/punchcutter.py new "Family Name" --preset grotesque --weights 300,400,700
-```
+1. `segment photo.jpg --out seg` finds the characters and writes `seg/segments.png`
+   with a number on each one.
+2. **Look at `segments.png`** and read which character each number is.
+3. `label seg --family "Name" --map '{"1":"H","2":"a","3":"m"}'`
+   (leave out numbers that are not characters; each character is used once, first seen wins).
+   If every box is a character in order, `--text "Hamburg"` is quicker.
+4. Build, look, release as above.
 
-Edit the JSON it writes. Put changes in `"design"`; every parameter is
-explained in `references/parameters.md`. Fill in `designer`, `description`
-and `license` (ask the user who the designer is if you do not know; leave
-license empty if they have not chosen one).
+Fewer letters means more of the font is engine-drawn. Tell the user what share
+came from their writing, and that the sheet route gives the full alphabet. The
+sentence "Sphinx of black quartz, judge my vow" covers a to z.
 
-Change a handful of parameters with intent. Each one should trace back to an
-adjective in the brief.
+Only use lettering the user made or owns. Do not trace a photo of a printed
+commercial font, a logo or someone else's lettering; offer route 4 instead.
 
-### 3. Drawing and first proof
+## Route 4: Match a mood
 
-```bash
-python scripts/punchcutter.py build spec.json --draft
-```
+The user sends an image they love (a poster, a place, a product, a painting).
+Read it for weight, width, contrast, roundness and energy, write the three
+adjectives, and run route 1 with parameters chosen to carry that feeling.
+The result is an original design. Never trace letterforms from the image.
 
-A draft takes a few seconds and writes `build/<Family>/proof.png`. **Look at
-the proof image.** You must see the font before you judge it.
+## Route 5: Remix
 
-To look closer at single letters, at every master weight:
+For a font made here. Open its spec, change what was asked ("bolder": raise
+`stem` or add a weight; "tighter": lower `spacing`; "friendlier": raise
+`roundness`, set `terminal` to `round`), rebuild, show before and after.
+For handwriting fonts use `--neat` and `--ink`. Fonts not made with Punchcutter
+cannot be opened; offer to design something new.
 
-```bash
-python scripts/punchcutter.py glyph spec.json a g s R ampersand --out glyphs.png
-```
-
-To give the family a signature, redraw letters in a custom glyph file and
-point the spec at it with `"glyphs": "my_glyphs.py"`. The drawing language is
-in `references/drawing.md`. Two to six custom letters (a, g, y, Q, R, &, t)
-are enough to make a family recognisable.
-
-### 4. Critique and revise
-
-Go through `references/critique.md` against the proof. Fix what you find by
-changing parameters or redrawing glyphs, then build a new draft. Do at least
-two rounds. Stop when a round finds nothing worth changing, or after five.
-
-Say what you changed and why, in plain words: "the e was closing up in Bold,
-so I opened the aperture."
-
-### 5. Production build
-
-```bash
-python scripts/punchcutter.py build spec.json
-```
-
-This runs all nine stages: Brief, Drawing, Spacing, Kerning, OpenType
-features, Sources, Compile, Quality assurance, Release package. It exits
-non-zero if a QA check fails. Fix failures; do not ship them.
-
-### 6. Hand over
-
-Everything is in `build/<Family>/`:
+## What the release contains
 
 | Path | What it is |
 | --- | --- |
-| `fonts/variable/` | one variable font with a weight axis |
+| `fonts/studio.html` | the font's app: tester, inspector, install guide, download |
+| `fonts/variable/` | one variable font with a weight axis (drawn fonts) |
 | `fonts/ttf/`, `fonts/otf/` | static desktop fonts |
-| `fonts/webfonts/` | WOFF2 |
-| `fonts/<Family>.css` | ready `@font-face` rules |
-| `fonts/specimen.html` | interactive specimen and type tester |
-| `proof.png`, `proof.svg` | proof sheet |
+| `fonts/webfonts/`, `fonts/<Family>.css` | WOFF2 and ready `@font-face` rules |
+| `proof.png` | proof sheet |
 | `report.md` | stage log and every QA check |
-| `sources/` | UFO masters and designspace, editable in Glyphs or FontLab |
-
-Zip `fonts/` for the user and show them `proof.png`. Summarise in a few lines:
-the design idea, weights, glyph count, features, QA result. Mention the honest
-limits below if they matter for the user's plan.
+| `sources/` | UFO masters, editable in Glyphs or FontLab |
 
 ## Rules
 
 - **Original work only.** Do not reproduce, trace or imitate a specific
-  commercial or protected typeface, and do not name a font after one. If asked
-  for "a free copy of X", offer an original design with a similar purpose.
-- **Never skip the proof.** A font that was not looked at is not finished.
-- **Do not edit `build/` by hand.** Change the spec or the glyph file and rebuild.
-- **The user owns the result.** Set the license they ask for. If they want it
-  private, write "All rights reserved" in `license`.
+  commercial or protected typeface or logo, and do not name a font after one.
+- **Never skip the proof.** A font nobody looked at is not finished.
+- **Do not edit `build/` by hand.** Change the spec, the glyph file or the photo options and rebuild.
+- **The user owns the result.** Set the license they ask for. If they want it private, write "All rights reserved".
 
 ## Honest limits
 
-- Latin only: Basic Latin, Latin-1 and Latin Extended-A accents (about 300 glyphs).
-- Upright styles. `slant` gives an oblique, not a true italic.
-- Sans and slab designs. No bracketed serifs, scripts or blackletter yet.
-- Fonts are unhinted. They render well on macOS, iOS, Android and modern
-  Windows; very small sizes on old Windows will be softer.
-- Spacing and kerning are computed, then checked by you. A human type designer
-  would still refine pairs by eye for a retail release.
+- Latin only: Basic Latin, Latin-1 and Latin Extended-A accents.
+- Upright styles; `slant` gives an oblique, not a true italic. Sans and slab designs.
+- Handwriting fonts are static weights (no variable font) and print-style: letters
+  do not join, so connected cursive comes out as separate letters.
+- Unhinted outlines: sharp on phones, macOS and modern Windows; softer at very small sizes on old Windows.
+- Spacing and kerning are computed, then checked by you.

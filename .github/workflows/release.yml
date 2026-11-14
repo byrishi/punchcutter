@@ -1,0 +1,42 @@
+# Push a tag like v1.2.0 to release: attaches punchcutter.skill and the Python
+# package to a GitHub release. PyPI publishing runs once the repository variable
+# PUBLISH_PYPI is set to "true" and a trusted publisher is configured on pypi.org.
+name: release
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  github:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build && python -m build
+      - run: cd skills && zip -qr ../punchcutter.skill punchcutter -x "*/__pycache__/*"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            punchcutter.skill
+            dist/*
+          generate_release_notes: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  pypi:
+    needs: github
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,46 +1,56 @@
-"""Render the repo banner and logo from Burin Grotesk (built by Punchcutter itself)."""
+"""Render the repo's brand assets: banner, social card, logo, sheet preview.
+Everything is generated: the fields are procedural, the type is Punchcutter's own."""
+import base64
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "skills", "punchcutter", "scripts"))
-from pc.proof import Face, Sheet  # noqa: E402
+from pc import brand  # noqa: E402
 
 
-def main(build_dir, assets):
-    base = os.path.join(build_dir, "BurinGrotesk", "fonts", "ttf")
-    heavy, reg = Face(os.path.join(base, "BurinGrotesk-ExtraBold.ttf")), Face(os.path.join(base, "BurinGrotesk-Regular.ttf"))
-    light = Face(os.path.join(base, "BurinGrotesk-Light.ttf"))
-    sh = Sheet(width=1600, margin=96, bg="#121212", fg="#f1efe9")
-    sh.gap(30)
-    sh.line(reg, "OPEN SOURCE TYPE FOUNDRY FOR CLAUDE", 22, color="#e5482d", tracking=0.12)
-    sh.gap(26)
-    sh.line(heavy, "Punchcutter", 236, tracking=-0.012)
-    sh.gap(18)
-    sh.line(light, "Describe a typeface. Get a font family.", 62)
-    sh.gap(40)
-    sh.line(reg, "Brief  >  Drawing  >  Spacing  >  Kerning  >  Features  >  QA  >  Release", 26, color="#8f8b82")
-    sh.gap(30)
-    sh.save(os.path.join(assets, "banner.svg"))
-    # square mark
-    s = 512
-    f = Face(os.path.join(base, "BurinGrotesk-ExtraBold.ttf"))
-    infos, pos = f.shape("P")
-    adv = pos[0].x_advance
-    k = 330 / f.upm
-    x = (s - adv * k) / 2
-    y = s / 2 + 714 * k / 2
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{s}" height="{s}" viewBox="0 0 {s} {s}">'
-           f'<rect width="{s}" height="{s}" rx="96" fill="#e5482d"/>'
-           f'<g fill="#121212" transform="translate({x:.1f} {y:.1f}) scale({k:.5f} {-k:.5f})"><path d="{f.path(infos[0].codepoint)}"/></g></svg>')
-    with open(os.path.join(assets, "logo.svg"), "w") as fh:
-        fh.write(svg)
-    try:
-        import cairosvg
-        cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(assets, "logo.png"))
-    except Exception:
-        pass
+def _card(w, h, scene, body):
+    import cv2
+    img = brand.field(w, h, scene)
+    ok, buf = cv2.imencode(".jpg", cv2.cvtColor(img, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 90])
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+            f'<image width="{w}" height="{h}" xlink:href="data:image/jpeg;base64,{base64.b64encode(buf.tobytes()).decode()}"/>'
+            f'<rect width="{w}" height="{h}" fill="#141810" opacity="0.16"/>{body}</svg>')
+
+
+def _save(svg, path, width):
+    import cairosvg
+    from PIL import Image
+    cairosvg.svg2png(bytestring=svg.encode(), write_to=path[:-4] + ".png", output_width=width)
+    Image.open(path[:-4] + ".png").convert("RGB").save(path, quality=88)
+    os.remove(path[:-4] + ".png")
+
+
+def main(assets):
+    os.makedirs(assets, exist_ok=True)
+    W, H = 1600, 760
+    body = (brand.mark(W / 2 - 62, 196, 124, bg=None)
+            + brand.wordmark(W / 2, 452, 104, anchor="middle")[0]
+            + brand.text(brand.TAGLINE, W / 2, 522, 34, "Regular", "#ffffff", anchor="middle")[0]
+            + brand.text("A TYPE FOUNDRY FOR CLAUDE AND OTHER AI AGENTS", W / 2, 700, 17, "Regular", "#ffffff", tracking=0.14, anchor="middle")[0])
+    _save(_card(W, H, "haze", body), os.path.join(assets, "banner.jpg"), W)
+    body = (brand.mark(640 - 70, 150, 140, bg=None) + brand.wordmark(640, 420, 92, anchor="middle")[0]
+            + brand.text(brand.TAGLINE, 640, 482, 30, "Regular", "#ffffff", anchor="middle")[0])
+    _save(_card(1280, 640, "meadow", body), os.path.join(assets, "social.jpg"), 1280)
+    logo = f'<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">{brand.mark(0, 0, 512)}</svg>'
+    with open(os.path.join(assets, "logo.svg"), "w") as f:
+        f.write(logo)
+    import cairosvg
+    cairosvg.svg2png(bytestring=logo.encode(), write_to=os.path.join(assets, "logo.png"))
+    lock = (f'<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220">{brand.mark(20, 30, 160)}'
+            + brand.wordmark(215, 142, 96, fill=brand.INK)[0] + "</svg>")
+    with open(os.path.join(assets, "lockup.svg"), "w") as f:
+        f.write(lock)
+    dark = (f'<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220">{brand.mark(20, 30, 160)}'
+            + brand.wordmark(215, 142, 96, fill=brand.CREAM)[0] + "</svg>")
+    with open(os.path.join(assets, "lockup-dark.svg"), "w") as f:
+        f.write(dark)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "assets"))

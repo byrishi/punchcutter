@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Getting started · Punchcutter</title><meta name="description" content="Install Punchcutter in the tool you already use. Then ask for a font.">
+<meta property="og:title" content="Getting started · Punchcutter"><meta property="og:description" content="Install Punchcutter in the tool you already use. Then ask for a font.">
+<meta property="og:image" content="assets/social.jpg"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f4efe4">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css"><script>
+(function(){var d=document.documentElement,t=null;try{t=localStorage.getItem('pc-theme')}catch(e){}if(t)d.dataset.theme=t;
+window.pcTheme=function(){var dark=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+d.dataset.theme=dark?'light':'dark';try{localStorage.setItem('pc-theme',d.dataset.theme)}catch(e){}}})();
+</script><script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init("phc_OP89N6nuHWu48k3n7j2fhFcA2y51GODeJGMJgRZgPbv",{api_host:"https://us.i.posthog.com",persistence:"memory",disable_session_recording:true,person_profiles:"identified_only",autocapture:true});
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a)return;var h=a.getAttribute("href")||"";
+if(/\.(skill|pdf|zip)$|studio\.html|github\.com/.test(h))posthog.capture("punchcutter_link",{href:h,kind:/github/.test(h)?"github":/studio/.test(h)?"studio":"download"});});
+</script></head><body><nav class="top"><div class="wrap"><a class="logo" href="index.html"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</a><span class="sp"></span><a class="l  on" href="getting-started.html">Docs</a><a class="l hide" href="index.html#gallery">Gallery</a><a class="l hide" href="brand.html">Brand</a><a class="l " href="https://github.com/byrishi/punchcutter">GitHub</a><button class="theme" onclick="pcTheme()" aria-label="Switch light and dark"><svg viewBox="0 0 20 20" width="16" height="16"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></svg></button></div></nav><div class="wrap doc"><aside class="side"><h4>Start</h4><a href="getting-started.html" class="on">Getting started</a><a href="routes.html" class="">The five routes</a><h4>Guides</h4><a href="handwriting.html" class="">Handwriting and photos</a><a href="parameters.html" class="">Design parameters</a><a href="drawing.html" class="">Drawing letters</a><a href="critique.html" class="">Critique checklist</a><h4>Reference</h4><a href="agents.html" class="">Claude, MCP and agents</a><a href="cli.html" class="">CLI reference</a><a href="brand.html" class="">Brand</a><a href="faq.html" class="">FAQ and limits</a></aside><main class="prose"><h1>Getting started</h1><p class="lede">Install Punchcutter in the tool you already use. Then ask for a font.</p><p>Every route needs Python 3.10 or newer. Punchcutter installs its own font libraries; nothing else is required.</p>
+<h2 id="claude-code">Claude Code</h2>
+<p>As a plugin, which adds the skill and the <code>/punchcutter</code> command:</p>
+<pre><code>/plugin marketplace add byrishi/punchcutter
+/plugin install punchcutter@punchcutter
+</code></pre>
+<p>As a plain skill:</p>
+<pre><code class="language-bash">npx skills add byrishi/punchcutter
+</code></pre>
+<p>By hand:</p>
+<pre><code class="language-bash">git clone https://github.com/byrishi/punchcutter
+mkdir -p ~/.claude/skills &amp;&amp; cp -r punchcutter/skills/punchcutter ~/.claude/skills/
+pip install -r ~/.claude/skills/punchcutter/scripts/requirements.txt
+</code></pre>
+<p>Then type <code>/punchcutter</code>, or just say "make me a font".</p>
+<h2 id="claude-app-web-desktop-mobile">Claude app (web, desktop, mobile)</h2>
+<ol>
+<li>Download <a href="https://github.com/byrishi/punchcutter/raw/main/dist/punchcutter.skill">punchcutter.skill</a>.</li>
+<li>In Claude, open Settings, then Skills, and upload the file. Code execution must be turned on.</li>
+<li>Start a chat: "make me a font".</li>
+</ol>
+<p>Claude installs the libraries on first use. When the font is done, the Studio opens right inside the chat.</p>
+<h2 id="claude-desktop-cursor-windsurf-vs-code">Claude Desktop, Cursor, Windsurf, VS Code</h2>
+<p>These connect through MCP. Install the package with the MCP extra:</p>
+<pre><code class="language-bash">pip install &quot;punchcutter[mcp] @ git+https://github.com/byrishi/punchcutter&quot;
+</code></pre>
+<p>Add it to the client's MCP config (<code>claude_desktop_config.json</code>, <code>.cursor/mcp.json</code>, <code>.vscode/mcp.json</code> and so on):</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;punchcutter&quot;: { &quot;command&quot;: &quot;punchcutter&quot;, &quot;args&quot;: [&quot;mcp&quot;] }
+  }
+}
+</code></pre>
+<p>Claude Code can add the same server in one line:</p>
+<pre><code class="language-bash">claude mcp add punchcutter -- punchcutter mcp
+</code></pre>
+<p>See <a href="agents.html">Claude, MCP and other agents</a> for the tool list.</p>
+<h2 id="chatgpt">ChatGPT</h2>
+<p>ChatGPT connects to remote MCP servers in developer mode (paid plans, on the web). Run Punchcutter as a web server and give ChatGPT its address.</p>
+<p>Start the server and open a tunnel to it:</p>
+<pre><code class="language-bash">pip install &quot;punchcutter[mcp] @ git+https://github.com/byrishi/punchcutter&quot;
+cloudflared tunnel --url http://localhost:8000      # or: ngrok http 8000
+punchcutter mcp --http --public-url https://YOUR-TUNNEL-ADDRESS
+</code></pre>
+<p>To host it permanently instead, deploy the repository's <code>Dockerfile</code> to Render, Railway or Fly and set <code>PUNCHCUTTER_PUBLIC_URL</code> to the app's address.</p>
+<p>Then connect ChatGPT:</p>
+<ol>
+<li>Open Settings, then Apps &amp; Connectors, then Advanced, and turn on Developer mode.</li>
+<li>Choose Create, paste <code>https://YOUR-TUNNEL-ADDRESS/mcp</code>, and set authentication to none.</li>
+<li>In a chat, pick Punchcutter from the Developer mode tools and say "make me a font".</li>
+</ol>
+<p>ChatGPT gets the proof as an image and the Studio and font zip as download links. For the photo routes, give it a link to the photo. Anyone with the address can use the server, so keep the tunnel address to yourself.</p>
+<h2 id="codex">Codex</h2>
+<p>As a skill, from your terminal:</p>
+<pre><code class="language-bash">npx skills add byrishi/punchcutter --agent codex
+pip install -r ~/.codex/skills/punchcutter/scripts/requirements.txt
+</code></pre>
+<p>Or inside Codex: <code>$skill-installer install https://github.com/byrishi/punchcutter/tree/main/skills/punchcutter</code>. Restart Codex, then type <code>$punchcutter</code>.</p>
+<p>As an MCP server:</p>
+<pre><code class="language-bash">codex mcp add punchcutter -- punchcutter mcp
+</code></pre>
+<p>or in <code>~/.codex/config.toml</code>:</p>
+<pre><code class="language-toml">[mcp_servers.punchcutter]
+command = &quot;punchcutter&quot;
+args = [&quot;mcp&quot;]
+</code></pre>
+<h2 id="gemini-cli-copilot-aider">Gemini CLI, Copilot, Aider</h2>
+<p>Clone the repository and open your agent in it. The <a href="https://github.com/byrishi/punchcutter/blob/main/AGENTS.md">AGENTS.md</a> file tells it how to run the foundry.</p>
+<pre><code class="language-bash">git clone https://github.com/byrishi/punchcutter &amp;&amp; cd punchcutter
+pip install -r skills/punchcutter/scripts/requirements.txt
+</code></pre>
+<p>Then ask: "Follow AGENTS.md and make me a rounded friendly font called Pomelo." The agent must be able to view images, because it checks its own proofs.</p>
+<h2 id="no-ai-at-all">No AI at all</h2>
+<p>The engine is a normal command line tool.</p>
+<pre><code class="language-bash">pip install &quot;git+https://github.com/byrishi/punchcutter&quot;
+punchcutter new &quot;My Sans&quot; --preset humanist --weights 300,400,700
+punchcutter build MySans.json
+</code></pre>
+<p>The <a href="cli.html">CLI reference</a> lists every command.</p>
+<h2 id="platform-notes">Platform notes</h2>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macOS</td>
+<td>Proof images and sheets need Cairo: <code>brew install cairo</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td>Use Python from python.org; everything installs with pip</td>
+</tr>
+<tr>
+<td>Linux</td>
+<td>Install <code>libcairo2</code> from your package manager if proofs fail</td>
+</tr>
+<tr>
+<td>Claude app</td>
+<td>Code execution must be on in Settings</td>
+</tr>
+</tbody>
+</table>
+<h2 id="your-first-font">Your first font</h2>
+<pre><code>&gt; a calm grotesque for a fintech app, three weights, call it Ledger
+</code></pre>
+<p>Punchcutter answers with its stages, shows you a proof, revises it, and ends with the Studio, the font files and a short list of next moves. That is the whole loop.</p><div class="pn"><span></span><a href="routes.html" style="text-align:right"><small>Next</small>The five routes</a></div><p style="margin-top:28px;font-size:14px;color:var(--mute)"><a href="https://github.com/byrishi/punchcutter/edit/main/site/content/getting-started.md">Edit this page</a></p></main></div><footer class="f"><div class="wrap"><span class="logo"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</span><span>A type foundry for Claude and other AI agents · v1.1.0</span><span><a href="getting-started.html">Docs</a> · <a href="https://github.com/byrishi/punchcutter">GitHub</a> · MIT license</span></div></footer></body></html>

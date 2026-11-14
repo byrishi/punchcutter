@@ -67,10 +67,17 @@ def resolve_design(spec):
     return design
 
 
-def master_designs(spec, design):
+def master_designs(spec, design, traced=None):
     """Return {wght: design dict}. Explicit masters win; otherwise masters are
     derived from the Regular design for the lightest and heaviest weight."""
     weights = sorted(int(w) for w in spec.get("weights", [400]))
+    if traced:
+        out = {}
+        for w, t in sorted(traced["weights"].items(), key=lambda kv: int(kv[0])):
+            d = dict(design)
+            d["stem"] = t["stem"]
+            out[int(w)] = d
+        return out, sorted(out)
     explicit = spec.get("masters")
     if explicit:
         out = {}
@@ -117,8 +124,30 @@ def _move(contours, dx, dy=0.0):
     return [c.transformed(lambda p: (p[0] + dx, p[1] + dy)) for c in contours]
 
 
-def draw_master(design, log=None):
+def _traced_glyph(name, design, traced, case):
+    """Contours for a glyph that came from a photo, or None."""
+    from .handwriting import contours_from_json
+    if name in traced:
+        return contours_from_json(traced[name]["contours"])
+    base = {"dotlessi": "i", "dotlessj": "j"}.get(name)
+    if base and base in traced:
+        cons = contours_from_json(traced[base]["contours"])
+        # drop the dot: contours that sit entirely above the x-height
+        keep = [c for c in cons if (bounds([c]) or (0, 0, 0, 0))[1] < design["xh"] * 0.9]
+        return keep or cons
+    if name == "zero.zero" and "zero" in traced:
+        cons = contours_from_json(traced["zero"]["contours"])
+        b = bounds(cons)
+        g = G(design, "fig")
+        w, h = b[2] - b[0], b[3] - b[1]
+        g.add(g.P(0.8).m(b[0] + w * 0.3, b[1] + h * 0.22).l(b[0] + w * 0.7, b[1] + h * 0.78), "round", "round")
+        return cons + g.shape.contours
+    return None
+
+
+def draw_master(design, log=None, traced=None):
     glyphs = {}
+    traced = traced or {}
     g0 = G(design)
     s, xh, cap = design["stem"], design["xh"], design["cap"]
     counter = g0.nw - 2 * s
@@ -126,9 +155,21 @@ def draw_master(design, log=None):
     target = {"lc": base, "uc": base * 1.25, "fig": base * 1.22, "punct": base * 0.8, "sym": base * 0.95, "accent": base * 0.7}
     depth = xh * 0.115
 
+    filled = []
     for name, (fn, uni, case) in GLYPHS.items():
         g = G(design, case)
-        fn(g)
+        if traced:
+            if name.endswith(".ss01"):
+                continue  # one form of each letter from the writer; no engine alternates
+            cons = _traced_glyph(name, design, traced, case)
+            if cons:
+                g.shape.contours = cons
+            else:
+                fn(g)
+                if case in ("lc", "uc", "fig", "punct", "sym"):
+                    filled.append(name)
+        else:
+            fn(g)
         gl = Glyph(name, uni, case)
         b = bounds(g.shape.contours)
         if b is None:
@@ -176,7 +217,7 @@ def draw_master(design, log=None):
         if (mark == "caron" and bch in "dltL") or (mark == "cedilla" and bch not in "CcSsTt"):
             continue
         variants = [("", cmap[ord(bch)])]
-        if bch == "a":
+        if bch == "a" and "a.ss01" in glyphs:
             variants.append((".ss01", "a.ss01"))
         for suffix, bname in variants:
             draw_base = {"i": "dotlessi", "j": "dotlessj"}.get(bch, bname) if mark != "cedilla" else bname
@@ -202,7 +243,7 @@ def draw_master(design, log=None):
                    polygon([(60 + t, t), (60 + w - t, t), (60 + w - t, cap - t), (60 + t, cap - t)]).reversed()]
     nd.advance = w + 120
     glyphs[".notdef"] = nd
-    return glyphs, dict(target=target, composites=made, tab=tw)
+    return glyphs, dict(target=target, composites=made, tab=tw, filled=filled)
 
 
 def flat_contours(glyphs, gl):
@@ -291,6 +332,12 @@ def features(glyphs, design):
     a_from = " ".join(n[:-5] for n in a_alts)
     a_to = " ".join(a_alts)
     case = " ".join(n for n in CASE_PUNCT if n in glyphs)
+    ss01 = f"""
+feature ss01 {{
+    featureNames {{ name "Alternate a"; }};
+    sub [{a_from}] by [{a_to}];
+}} ss01;
+""" if a_alts else ""
     return f"""languagesystem DFLT dflt;
 languagesystem latn dflt;
 
@@ -311,12 +358,7 @@ feature zero {{
     sub zero by zero.zero;
     sub zero.tf by zero.zero.tf;
 }} zero;
-
-feature ss01 {{
-    featureNames {{ name "Alternate a"; }};
-    sub [{a_from}] by [{a_to}];
-}} ss01;
-"""
+{ss01}"""
 
 
 # ------------------------------------------------------------------ UFO output
@@ -453,20 +495,27 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
     fam_id = fam.replace(" ", "")
 
     log.stage("Brief")
+    from .handwriting import load_traced
     design = resolve_design(spec)
     custom = load_overrides(spec)
-    masters, weights = master_designs(spec, design)
+    traced = load_traced(spec)
+    masters, weights = master_designs(spec, design, traced)
     log.note(f"{fam}: preset {spec.get('preset', 'none')}, {len(weights)} weight(s) {weights}, "
              f"{len(masters)} master(s) at {list(masters)}")
     if custom:
         log.note(f"custom drawings: {', '.join(custom)}")
+    if traced:
+        log.note("source: handwriting photo (static weights, outlines traced from the writer)")
 
     log.stage("Drawing")
     drawn, meta = {}, {}
     for w, d in masters.items():
-        drawn[w], meta[w] = draw_master(d)
+        drawn[w], meta[w] = draw_master(d, traced=traced["weights"][str(w)]["glyphs"] if traced else None)
     any_m = next(iter(drawn.values()))
-    log.note(f"{len(any_m)} glyphs per master ({meta[next(iter(meta))]['composites']} accented composites)")
+    m0 = meta[next(iter(meta))]
+    log.note(f"{len(any_m)} glyphs per master ({m0['composites']} accented composites)")
+    if traced:
+        log.note(f"{len(m0['filled'])} glyphs not on the photo were drawn by the engine at the writer's stroke weight")
 
     log.stage("Spacing")
     for w, d in masters.items():
@@ -495,7 +544,7 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
 
     log.stage("OpenType features")
     fea = features(any_m, design)
-    log.note("kern, case, tnum, zero, ss01")
+    log.note(", ".join(t for t in ("kern", "case", "tnum", "zero", "ss01") if t != "ss01" or "feature ss01" in fea))
 
     log.stage("Sources")
     work = os.path.join(out_dir, "sources")
@@ -514,7 +563,7 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
     made = []
     for sub in ("variable", "ttf", "otf", "webfonts"):
         shutil.rmtree(os.path.join(fonts, sub), ignore_errors=True)
-    variable = len(masters) > 1 and "variable" in formats
+    variable = len(masters) > 1 and "variable" in formats and not traced
     if variable:
         vf = os.path.join(fonts, "variable", f"{fam_id}[wght].ttf")
         os.makedirs(os.path.dirname(vf), exist_ok=True)
@@ -525,10 +574,10 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
         if fmt not in formats:
             continue
         od = os.path.join(fonts, fmt)
-        if len(masters) > 1:
+        if len(masters) > 1 and not traced:
             _fontmake(["-m", ds, "-o", fmt, "-i", "--output-dir", od], log)
         else:
-            _fontmake(["-u", ufos[next(iter(ufos))], "-o", fmt, "--output-dir", od], log)
+            _fontmake(["-u"] + list(ufos.values()) + ["-o", fmt, "--output-dir", od], log)
         for f in sorted(os.listdir(od)):
             if fmt == "ttf":
                 _finish_ttf(os.path.join(od, f))

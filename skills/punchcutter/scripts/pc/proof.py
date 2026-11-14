@@ -16,6 +16,8 @@ class Face:
             self.font.set_variations(variations)
         self.upm = self.face.upem
         self._paths = {}
+        from fontTools.ttLib import TTFont
+        self.glyph_names = set(TTFont(path, lazy=True).getGlyphOrder())
 
     def path(self, gid):
         if gid not in self._paths:
@@ -35,7 +37,9 @@ class Face:
 class Sheet:
     """A page of text lines. Collects SVG, tracks the cursor."""
 
-    def __init__(self, width=1600, margin=70, bg="#ffffff", fg="#111111"):
+    def __init__(self, width=1600, margin=70, bg=None, fg=None):
+        from . import brand
+        bg, fg = bg or brand.CREAM, fg or brand.INK
         self.w, self.m, self.bg, self.fg = width, margin, bg, fg
         self.y = margin
         self.out = []
@@ -43,11 +47,11 @@ class Sheet:
     def gap(self, h):
         self.y += h
 
-    def label(self, text, color="#888888", size=17):
+    def label(self, text, color=None, size=15):
+        from . import brand
         self.y += size
-        self.out.append(f'<text x="{self.m}" y="{self.y}" font-family="monospace" font-size="{size}" '
-                        f'fill="{color}">{html.escape(text)}</text>')
-        self.y += size * 0.7
+        self.out.append(brand.label(text, self.m, self.y, size, color or brand.MUTE))
+        self.y += size * 0.9
 
     def line(self, face, text, size, features=None, color=None, x=None, advance=True, tracking=0.0):
         """Set one line. Returns its width in px."""
@@ -84,7 +88,9 @@ class Sheet:
             self.line(face, cur, size, features, color, advance=False)
             self.y += size * leading
 
-    def rule(self, color="#dddddd"):
+    def rule(self, color=None):
+        from . import brand
+        color = color or brand.LINE
         self.y += 14
         self.out.append(f'<rect x="{self.m}" y="{self.y}" width="{self.w - 2 * self.m}" height="1.5" fill="{color}"/>')
         self.y += 22
@@ -123,6 +129,7 @@ def proof(result, path, png_width=1500):
     fid = result["family_id"]
     out = result["out"]
     import os
+    from . import brand
     from .presets import WEIGHT_NAME
     faces = {}
     for w in result["weights"]:
@@ -134,7 +141,8 @@ def proof(result, path, png_width=1500):
     reg = faces[400] if 400 in faces else faces[ws[len(ws) // 2]]
     heavy = faces[ws[-1]]
     sh = Sheet()
-    sh.label(f"{fam} / proof sheet")
+    sh.out.append(brand.mark(sh.w - sh.m - 40, sh.m - 6, 40))
+    sh.label(f"{fam}  ·  proof sheet  ·  punchcutter {brand.VERSION}")
     sh.line(heavy, fam, 150)
     sh.gap(10)
     for w in ws:
@@ -155,13 +163,15 @@ def proof(result, path, png_width=1500):
     for s in KERNING:
         sh.line(reg, s, 58)
     sh.label("kerning off")
-    sh.line(reg, KERNING[0], 58, {"kern": False}, color="#999999")
+    sh.line(reg, KERNING[0], 58, {"kern": False}, color=brand.MUTE)
     sh.rule()
-    sh.label("features: tnum / zero / ss01 / case")
+    has_ss01 = "a.ss01" in reg.glyph_names
+    sh.label("features: tnum / zero / case" + (" / ss01" if has_ss01 else ""))
     sh.line(reg, "1111 0000  ->", 50, advance=False)
     sh.line(reg, "1111 0000", 50, {"tnum": True, "zero": True}, x=520)
-    sh.line(reg, "banana  ->", 50, advance=False)
-    sh.line(reg, "banana", 50, {"ss01": True}, x=520)
+    if has_ss01:
+        sh.line(reg, "banana  ->", 50, advance=False)
+        sh.line(reg, "banana", 50, {"ss01": True}, x=520)
     sh.line(reg, "(A-B)  ->", 50, advance=False)
     sh.line(reg, "(A-B)", 50, {"case": True}, x=520)
     sh.rule()

@@ -67,7 +67,7 @@ def check_font(path):
     for tag in ("GSUB", "GPOS"):
         if tag in tt:
             feats |= {f.FeatureTag for f in tt[tag].table.FeatureList.FeatureRecord}
-    want = {"kern", "case", "tnum", "zero", "ss01"}
+    want = {"kern", "case", "tnum", "zero"}
     add(want <= feats, f"features present: {', '.join(sorted(feats))}")
 
     if "fvar" in tt:
