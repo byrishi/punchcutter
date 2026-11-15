@@ -109,6 +109,7 @@ def _main(argv=None):
         r.add_argument("--weights", default="400", help="for example 400,700")
         r.add_argument("--neat", type=float, default=0.5, help="0 keeps every wobble, 1 lines letters up like type")
         r.add_argument("--ink", type=float, default=0.0, help="make strokes heavier (+) or lighter (-), in font units")
+        r.add_argument("--even", action="store_true", help="redraw every stroke with one steady pen: cleaner, more finished")
         r.add_argument("--designer", default="")
         if name == "label":
             r.add_argument("--text", help="the characters in reading order, as numbered on segments.png")
@@ -195,7 +196,7 @@ def _main(argv=None):
             sys.exit("Too few characters were readable to make a font. Check the photo and try again.")
         out = a.out or a.family.replace(" ", "")
         spec = hw.make_font_project(samples, a.family, out, weights, a.ink, a.neat, a.designer,
-                                    route="handwriting" if a.cmd == "read-sheet" else "photo")
+                                    route="handwriting" if a.cmd == "read-sheet" else "photo", even=getattr(a, "even", False))
         print(f"wrote {spec}\nnext: punchcutter build {spec} --draft")
         return 0
     if a.cmd == "build":

@@ -35,6 +35,8 @@
 | `--neat 0` | exactly as written: every letter keeps its own size and bounce |
 | `--neat 0.5` | default: half way to aligned |
 | `--neat 1` | letters lined up on shared heights, like type |
+
+`--even` traces the centre line of every stroke and draws it again with one steady pen. Blots, faint ballpoint lines, broken strokes and ragged phone-photo edges go; the writer's shapes stay. Strokes that nearly touch inside a letter are joined (never the dot of i, j, ! or ?). Recommended for any phone photo: `--even --neat 0.9`.
 | `--ink 20` | strokes 20 units heavier (use for thin ballpoint) |
 | `--ink -20` | lighter (use for a fat marker that fills in) |
 | `--weights 400,700` | adds weights by growing the same strokes |

@@ -16,7 +16,7 @@ import random
 import sys
 
 NAME = "Punchcutter"
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 TAGLINE = "Describe a typeface. Get a font family."
 SITE = "byrishi.github.io/punchcutter"
 REPO = "github.com/byrishi/punchcutter"

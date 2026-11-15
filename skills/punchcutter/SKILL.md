@@ -85,6 +85,7 @@ All commands below are `python scripts/punchcutter.py <command>`.
 3. `build Name/Name.json --draft`, look at the proof, then release.
 4. Tune by rerunning `read-sheet` with:
    - `--neat 0..1` how much letters are lined up (0 keeps every wobble, 1 is tidy; default 0.5)
+   - `--even` redraws every stroke with one steady pen. Use it for ballpoint or phone photos (blotchy or faint ink); pair it with `--neat 0.9` for a finished look
    - `--ink N` heavier (+) or lighter (-) strokes, in font units (try 10 to 30)
    - `--weights 400,700` extra weights are grown from the same writing
 5. If a letter came out badly, say which and offer: rewrite just that box and

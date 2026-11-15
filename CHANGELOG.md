@@ -2,6 +2,18 @@
 
 All notable changes to Punchcutter. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-11-15
+
+### Added
+- `--even` for the photo routes (and `even` on the MCP `label_letters` tool): redraws every stroke with one steady pen. Faint ballpoint lines, blots, broken strokes and ragged phone-photo edges are cleaned up; the writer's letter shapes stay.
+- Strokes that nearly touch inside a letter are joined; the dots of i, j, ! and ? stay apart.
+- Each letter's baseline is read from its neighbours, so writing on a curled page or a wandering line sits level.
+- Very wide letters are eased toward a normal width when tidying.
+
+### Fixed
+- `--neat` moved letters that sat below the line further down instead of onto the baseline.
+- Handwriting fonts could lose part of a letter (or fill a counter, as in a bold O) when overlaps were merged; each weight is now merged on its own.
+
 ## [1.3.0] - 2026-11-15
 
 ### Added

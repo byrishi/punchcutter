@@ -241,16 +241,18 @@ def make_server(ctx: Ctx | None = None, **server_kw):
 
     @mcp.tool()
     def label_letters(folder: str, family: str, labels: dict = {}, text: str = "", weights: list[int] = [400],
-                      neat: float = 0.5, ink: float = 0.0, designer: str = "", out: str = "") -> str:
+                      neat: float = 0.5, ink: float = 0.0, designer: str = "", out: str = "", even: bool = False) -> str:
         """Quick photo route, step 2: name the numbered characters. `labels` maps box number to character
-        ({"1": "H", "2": "a"}; leave out boxes that are not letters), or give `text` with every character in order."""
+        ({"1": "H", "2": "a"}; leave out boxes that are not letters), or give `text` with every character in order.
+        `even` redraws every stroke with one steady pen: use it for ballpoint or phone photos, where the ink is
+        blotchy or faint in places, to get a cleaner, finished font."""
         logs = []
         try:
             samples = hw.read_labeled(ctx.path(folder), labels or text, log=logs.append)
             if len(samples) < 5:
                 return "Too few characters to make a font. Ask for more writing: 'Sphinx of black quartz, judge my vow' covers a to z."
             spec = hw.make_font_project(samples, family, ctx.path(out or family.replace(" ", "")), weights, ink, neat,
-                                        designer, log=logs.append, route="photo")
+                                        designer, log=logs.append, route="photo", even=even)
         except (ValueError, KeyError, OSError) as e:
             return f"Could not label: {e}"
         return "\n".join(logs) + f"\nspec: {os.path.relpath(spec, ctx.workdir) if ctx.remote else spec}"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "punchcutter"
-version = "1.3.0"
+version = "1.3.1"
 description = "A type foundry for Claude and other AI agents. Describe a typeface, get a font family."
 readme = "README.md"
 license = { text = "MIT" }

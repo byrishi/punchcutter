@@ -548,7 +548,7 @@ def build(spec_path, out_dir, quiet=False, formats=("variable", "ttf", "otf", "w
     if traced:   # the writer's pen already shaped every edge; keep it as written
         for d in masters.values():
             d["soften"] = 0.0
-    kept = finish_masters(drawn, masters)
+    kept = finish_masters(drawn, masters, static=bool(traced))
     log.note(f"finishing: overlaps merged and corners softened ({len(kept)} glyph(s) kept as overlapping strokes"
              + (f": {', '.join(kept[:12])}" if kept else "") + ")")
     any_m = next(iter(drawn.values()))

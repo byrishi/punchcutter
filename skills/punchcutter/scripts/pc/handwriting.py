@@ -309,6 +309,24 @@ def _base_at(base0, slope, curve, x):
     return float(np.polyval(curve, x)) if curve is not None else base0 + slope * x
 
 
+def _local_base(b, items, fallback, k=4):
+    """Baseline under one letter, from the bottoms of its nearest neighbours that
+    sit on the line. Follows a curled page or a line that wanders, where one fit
+    for the whole line would leave letters floating or sinking."""
+    cx = (b["x0"] + b["x1"]) / 2
+    flat = [((o["x0"] + o["x1"]) / 2, o["y1"]) for ch, o in items
+            if ch.isalnum() and ch not in DESC and ch not in "Qf"]
+    if len(flat) < 3:
+        return fallback
+    near = sorted(flat, key=lambda p: abs(p[0] - cx))[:k]
+    if len(near) >= 3:   # a straight line through the neighbours, read off at this letter
+        xs = np.array([p[0] for p in near]); ys = np.array([p[1] for p in near])
+        if np.ptp(xs) > 0:
+            a, c = np.polyfit(xs, ys, 1)
+            return float(a * cx + c)
+    return float(np.median([p[1] for p in near]))
+
+
 def read_labeled(seg_dir, labels, log=print):
     """labels: {"1": "H", "2": "e", ...} or a string with one character per box in reading order."""
     import cv2
@@ -383,6 +401,7 @@ def read_labeled(seg_dir, labels, log=print):
                 continue
             seen.add(ch)
             base = _base_at(base0, slope, curve, (b["x0"] + b["x1"]) / 2)
+            base = _local_base(b, items, base)
             m = 4
             y0, y1, x0, x1 = max(b["y0"] - m, 0), b["y1"] + m, max(b["x0"] - m, 0), b["x1"] + m
             hard = np.isin(lab[y0:y1, x0:x1], b["ids"]).astype(np.uint8)
@@ -398,7 +417,7 @@ def read_labeled(seg_dir, labels, log=print):
             big = cv2.GaussianBlur(big, (0, 0), UP * 1.6)
             mask = big > 0.5
             f = UP * 2
-            samples.append(dict(char=ch, mask=mask, scale=units / f, ox=0.0, oy=(base - y0) * f))
+            samples.append(dict(char=ch, mask=mask, faint=big > 0.22, scale=units / f, ox=0.0, oy=(base - y0) * f))
     log(f"quick photo: {len(samples)} labelled characters on {len(by_line)} line(s)")
     return samples
 
@@ -451,13 +470,13 @@ def tidy(samples, metrics, amount):
     if amount <= 0:
         return
     targets = {}
-    for ch in "ABDEFHIKLMNPRTUVWXYZ0123456789CGOQS":
+    for ch in "ABDEFHIKLMNPRTUVWXYZ0123456789CGOQS!?&":
         targets[ch] = metrics["cap"]
     for ch in "acemnorsuvwxz":
         targets[ch] = metrics["xh"]
     for ch in "bdhkl":
         targets[ch] = metrics["asc"]
-    flat = set("ABDEFHIKLMNPRTUVWXZ0123456789abdhiklmnrtuvwxz")
+    flat = set("ABDEFHIKLMNPRTUVWXZ0123456789abdhiklmnrtuvwxz!?&")
     for s in samples:
         t = targets.get(s["char"])
         if t is None:
@@ -466,11 +485,40 @@ def tidy(samples, metrics, amount):
         if top <= 1:
             continue
         if s["char"] in flat:
-            s["oy"] += (bot * amount) / s["scale"]      # settle onto the baseline
+            s["oy"] -= (bot * amount) / s["scale"]      # settle onto the baseline
             top -= bot * amount
         f = (t / top) ** amount
         s["scale"] *= f
-        s["oy"] = s["oy"]                                 # baseline stays at y = 0
+    # very wide letters read as sprawl in running text: ease them toward a
+    # typical width without changing their height or shape
+    for s in samples:
+        ch = s["char"]
+        lim = WIDE.get(ch, 1.3 if ch.isalpha() or ch.isdigit() else None)
+        if not lim:
+            continue
+        x0, bot, x1, top = _bbox_units(s)
+        h = max(top - max(bot, metrics["desc"]), 1.0)
+        if ch in "gjpqy":
+            h = max(top - bot, 1.0)
+        ratio = (x1 - x0) / h
+        if ratio > lim:
+            k = (lim / ratio) ** amount
+            _squeeze(s, k)
+
+
+DOTTED = set('ij!?;:%"=÷')   # marks that must stay apart
+WIDE = {**{c: 1.9 for c in "mwMW"}, **{c: 1.35 for c in "OQCGD0@"}, "r": 1.1, "f": 1.0, "t": 1.0, "1": 0.6}
+
+
+def _squeeze(s, k):
+    """Narrow a sample horizontally by k, keeping its left edge."""
+    import cv2
+    m = s["mask"]
+    w = max(1, int(round(m.shape[1] * k)))
+    s["mask"] = cv2.resize(m.astype(np.uint8), (w, m.shape[0]), interpolation=cv2.INTER_AREA) > 0
+    if s.get("faint") is not None:
+        s["faint"] = cv2.resize(s["faint"].astype(np.uint8), (w, m.shape[0]), interpolation=cv2.INTER_AREA) > 0
+    s["ox"] = s["ox"] * k
 
 
 def stroke_width(samples):
@@ -568,7 +616,7 @@ def contours_from_json(data):
     return cons
 
 
-def trace_samples(samples, weights, ink=0.0, neat=0.5, log=print):
+def trace_samples(samples, weights, ink=0.0, neat=0.5, log=print, even=False):
     """Trace every sample at every requested weight. Returns the traced-font dict."""
     from .glyphs_latin import GLYPHS
     from . import glyphs_extra  # noqa: F401
@@ -586,8 +634,13 @@ def trace_samples(samples, weights, ink=0.0, neat=0.5, log=print):
             name = by_uni.get(ord(s["char"]))
             if not name:
                 continue
-            r = (target - stem0) / 2 / s["scale"]
-            m = _morph(s["mask"], r)
+            if even:
+                src = s["mask"]
+                if s.get("faint") is not None:   # light pen pressure still counts as a stroke when redrawing
+                    src = s["mask"] | s["faint"]
+                m = _even_pen(src, target / 2 / s["scale"], bridge=s["char"] not in DOTTED)
+            else:
+                m = _morph(s["mask"], (target - stem0) / 2 / s["scale"])
             cons = trace_mask(m, s["scale"], s["ox"], s["oy"])
             if cons:
                 glyphs[name] = dict(contours=contours_to_json(cons))
@@ -596,11 +649,94 @@ def trace_samples(samples, weights, ink=0.0, neat=0.5, log=print):
     return out
 
 
-def make_font_project(samples, family, out_dir, weights=(400,), ink=0.0, neat=0.5, designer="", log=print, route="handwriting"):
+def _even_pen(mask, r_px, bridge=True):
+    """Redraw the writing with one steady pen: find the centre line of every
+    stroke, drop the little hairs a skeleton grows at blobs and corners, and
+    stroke it again at an even width. Keeps the hand's path and shapes, loses
+    the blur, the pressure blots and the ragged ink edge of a phone photo."""
+    import cv2
+    from skimage.morphology import skeletonize
+    m = mask.astype(np.uint8)
+    if m.sum() == 0:
+        return mask
+    # close pinholes and specks first so the centre line is one clean path
+    k = max(3, int(r_px * 0.5) | 1)
+    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m, 8)
+    keep = np.zeros_like(m)
+    big = st[1:, cv2.CC_STAT_AREA].max() if n > 1 else 0
+    for i in range(1, n):
+        floor = max(big * 0.015, (r_px * 1.2) ** 2) if not bridge else max(big * 0.02, (r_px * 1.5) ** 2)
+        if st[i, cv2.CC_STAT_AREA] >= floor:
+            keep[lab == i] = 1
+    if bridge:
+        keep = _bridge(keep, max(r_px * 4.0, 0.14 * max(keep.shape)))
+    sk = skeletonize(keep > 0).astype(np.uint8)
+    sk = _prune(sk, int(max(4, r_px * 2.4)))
+    if sk.sum() == 0:
+        return mask
+    # stroke the centre line: distance to the line below the pen radius
+    dist = cv2.distanceTransform((1 - sk).astype(np.uint8), cv2.DIST_L2, 5)
+    out = (dist <= r_px).astype(np.float32)
+    out = cv2.GaussianBlur(out, (0, 0), max(1.0, r_px * 0.35))
+    return out > 0.5
+
+
+def _bridge(m, gap):
+    """Join pen strokes that nearly touch (a lifted pen inside one letter)
+    with a short stroke between their closest points."""
+    import cv2
+    n, lab = cv2.connectedComponents(m, connectivity=8)
+    if n <= 2:
+        return m
+    pts = [np.argwhere(lab == i) for i in range(1, n)]
+    out = m.copy()
+    w = max(1, int(gap / 2.2))
+    for i in range(len(pts)):
+        for j in range(i + 1, len(pts)):
+            a, b = pts[i][:: max(1, len(pts[i]) // 400)], pts[j][:: max(1, len(pts[j]) // 400)]
+            d = ((a[:, None, :] - b[None, :, :]) ** 2).sum(-1)
+            k = np.unravel_index(int(d.argmin()), d.shape)
+            if 0 < d[k] ** 0.5 <= gap:
+                (y0, x0), (y1, x1) = a[k[0]], b[k[1]]
+                cv2.line(out, (int(x0), int(y0)), (int(x1), int(y1)), 1, w)
+    return out
+
+
+def _prune(sk, length):
+    """Remove skeleton branches shorter than length that end in a free tip."""
+    import cv2
+    sk = sk.copy()
+    kern = np.ones((3, 3), np.uint8)
+    for _ in range(3):
+        nb = cv2.filter2D(sk, -1, kern, borderType=cv2.BORDER_CONSTANT) - sk
+        ends = np.argwhere((sk == 1) & (nb == 1))
+        junction = (sk == 1) & (nb >= 3)
+        changed = False
+        for y, x in ends:
+            path = [(y, x)]; py, px = y, x; prev = None
+            while len(path) <= length:
+                ys, xs = np.nonzero(sk[max(py - 1, 0):py + 2, max(px - 1, 0):px + 2])
+                nxt = [(py - 1 + a + (py == 0), px - 1 + b + (px == 0)) for a, b in zip(ys, xs)]
+                nxt = [q for q in nxt if q != (py, px) and q != prev and q not in path]
+                if len(nxt) != 1 or junction[nxt[0]]:
+                    break
+                prev = (py, px); py, px = nxt[0]; path.append((py, px))
+            hit_junction = any(junction[max(py - 1, 0):py + 2, max(px - 1, 0):px + 2].ravel())
+            if len(path) <= length and hit_junction:
+                for q in path:
+                    sk[q] = 0
+                changed = True
+        if not changed:
+            break
+    return sk
+
+
+def make_font_project(samples, family, out_dir, weights=(400,), ink=0.0, neat=0.5, designer="", log=print, route="handwriting", even=False):
     """Trace samples and write traced.json plus a ready spec. Returns the spec path.
     ink: add (or remove, if negative) stroke weight in font units.
     neat: 0 keeps every bounce of the writing, 1 lines letters up like type."""
-    traced = trace_samples(samples, weights, ink, neat, log)
+    traced = trace_samples(samples, weights, ink, neat, log, even)
     os.makedirs(out_dir, exist_ok=True)
     tpath = os.path.join(out_dir, "traced.json")
     with open(tpath, "w") as f:

@@ -348,7 +348,7 @@ def _align(merged):
     return aligned
 
 
-def finish_masters(drawn, designs):
+def finish_masters(drawn, designs, static=False):
     """Merge overlaps and soften corners in every master. drawn: {wght: {name: Glyph}}.
 
     Returns the names of glyphs whose merged outlines differ in structure
@@ -364,6 +364,14 @@ def finish_masters(drawn, designs):
             continue
         merged = [union(g.contours) for g in gls]
         ok = all(merged)
+        if static:
+            # separate fonts per weight (a traced hand): no interpolation, so each
+            # weight is merged on its own and never needs the same structure
+            for w, g, m in zip(ws, gls, merged):
+                if m:
+                    tl = designs[w]["stem"] * 0.2
+                    g.contours = [collapse(c, short_segments(c, tl)) or c for c in m]
+            continue
         if ok and len(ws) > 1:
             aligned = _align(merged)
             if aligned is None:
