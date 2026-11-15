@@ -119,7 +119,7 @@ const photos=MK.map(s=>{const im=new Image();im.src='data:image/jpeg;base64,'+s.
 const cvs=[];const g=$('#mkgrid');
 MK.forEach((s,i)=>{const d=el('div','mk');const c=document.createElement('canvas');c.width=1280;c.height=853;cvs.push(c);d.append(c);
  d.insertAdjacentHTML('beforeend',`<div class="mkf"><span>${E(s.n)}</span><button class="btn sm">Download PNG</button></div>`);
- d.querySelector('button').onclick=()=>c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=D.id+'-'+s.k+'.png';a.click();toast('Mockup saved')});g.append(d)});
+ d.querySelector('button').onclick=()=>{window.pcTrack&&pcTrack('mockup_download',{scene:s.k})};d.querySelector('button').addEventListener('click',()=>c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=D.id+'-'+s.k+'.png';a.click();toast('Mockup saved')}));g.append(d)});
 async function scene(i,tok){const s=MK[i],c=cvs[i],ctx=c.getContext('2d'),P=PAL[mk.p],ph=photos[i];
  if(!ph.complete)await new Promise(r=>ph.onload=r);
  const layer=document.createElement('canvas');layer.width=1280;layer.height=853;const lx=layer.getContext('2d');

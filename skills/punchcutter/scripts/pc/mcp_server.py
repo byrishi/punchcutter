@@ -88,9 +88,39 @@ def make_server(ctx: Ctx | None = None, **server_kw):
     except TypeError:
         mcp = Server("punchcutter", instructions=GUIDE, **server_kw)
 
+    import functools
+    from . import telemetry
+    _seen = {"client": False}
+
+    def _who():
+        if _seen["client"]:
+            return
+        try:
+            ci = mcp.get_context().session.client_params.clientInfo
+            telemetry.set_client(ci.name, getattr(ci, "version", ""))
+            _seen["client"] = True
+        except Exception:
+            pass
+
+    _plain_tool = mcp.tool
+
+    def tool(*a, **k):
+        deco = _plain_tool(*a, **k)
+
+        def wrap(fn):
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                _who()
+                telemetry.track("tool_called", tool=fn.__name__, surface="mcp", transport="http" if ctx.remote else "stdio")
+                return fn(*args, **kwargs)
+            return deco(inner)
+        return wrap
+
+    mcp.tool = tool
+
     @mcp.tool()
     def menu() -> str:
-        """Show the five ways to make a font. Start here."""
+        """Show the six ways to make a font. Start here."""
         return brand.menu_text() + "\n\n" + GUIDE
 
     @mcp.tool()
@@ -220,7 +250,7 @@ def make_server(ctx: Ctx | None = None, **server_kw):
             if len(samples) < 5:
                 return "Too few characters to make a font. Ask for more writing: 'Sphinx of black quartz, judge my vow' covers a to z."
             spec = hw.make_font_project(samples, family, ctx.path(out or family.replace(" ", "")), weights, ink, neat,
-                                        designer, log=logs.append)
+                                        designer, log=logs.append, route="photo")
         except (ValueError, KeyError, OSError) as e:
             return f"Could not label: {e}"
         return "\n".join(logs) + f"\nspec: {os.path.relpath(spec, ctx.workdir) if ctx.remote else spec}"
@@ -256,6 +286,9 @@ def main(argv=None):
                     help="the address clients reach this server at, used for download links")
     ap.add_argument("--workdir", default=os.environ.get("PUNCHCUTTER_WORKDIR"))
     a = ap.parse_args(argv)
+    from . import telemetry
+    telemetry.SURFACE["name"] = "mcp"
+    telemetry.track("mcp_started", transport="http" if a.http else "stdio", surface="mcp")
     try:
         if not a.http:
             make_server(Ctx()).run()

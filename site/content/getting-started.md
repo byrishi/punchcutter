@@ -32,7 +32,7 @@ Then type `/punchcutter`, or just say "make me a font".
 
 ## Claude app (web, desktop, mobile)
 
-1. Download [punchcutter.skill](https://github.com/byrishi/punchcutter/raw/main/dist/punchcutter.skill).
+1. Download [punchcutter.skill](https://github.com/byrishi/punchcutter/releases/latest/download/punchcutter.skill).
 2. In Claude, open Settings, then Skills, and upload the file. Code execution must be turned on.
 3. Start a chat: "make me a font".
 

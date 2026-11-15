@@ -18,7 +18,7 @@ punchcutter mcp          # stdio server
 
 | Tool | What it does |
 | --- | --- |
-| `menu` | the five routes and the working method |
+| `menu` | the six routes and the working method |
 | `presets` | all presets and design parameters |
 | `new_font` | write a font spec from a brief |
 | `update_design` | change parameters, weights or the custom glyph file |

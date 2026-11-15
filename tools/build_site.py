@@ -22,15 +22,16 @@ OUT = os.path.join(ROOT, "docs")
 CONTENT = os.path.join(ROOT, "site", "content")
 REPO = "https://github.com/byrishi/punchcutter"
 
-NAV = [("Start", [("getting-started", "Getting started"), ("routes", "The five routes")]),
+NAV = [("Start", [("getting-started", "Getting started"), ("routes", "The six routes")]),
        ("Guides", [("handwriting", "Handwriting and photos"), ("parameters", "Design parameters"),
                    ("drawing", "Drawing letters"), ("critique", "Critique checklist")]),
-       ("Reference", [("agents", "Claude, MCP and agents"), ("cli", "CLI reference"), ("brand", "Brand"), ("faq", "FAQ and limits")])]
+       ("Reference", [("agents", "Claude, MCP and agents"), ("cli", "CLI reference"), ("brand", "Brand"), ("privacy", "Privacy and usage stats"), ("faq", "FAQ and limits")])]
 PAGES = [slug for _, items in NAV for slug, _ in items]
 TITLES = {slug: t for _, items in NAV for slug, t in items}
 FAMILIES = [("Burin Grotesk", "BurinGrotesk", "A calm neo-grotesque", 800), ("Pomelo Round", "PomeloRound", "Soft and friendly", 700),
             ("Quarry Slab", "QuarrySlab", "Sturdy slab serif", 700), ("Semaphore Condensed", "SemaphoreCondensed", "Tall, narrow, loud", 800),
-            ("Lumen Contrast", "LumenContrast", "High-contrast display sans", 700)]
+            ("Lumen Contrast", "LumenContrast", "High-contrast display sans", 700),
+            ("Kiln Sans", "KilnSans", "Open-base remix of Roboto Flex (OFL)", 800)]
 
 CSS = """
 @font-face{font-family:Burin;src:url(assets/fonts/BurinGrotesk-Regular.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -107,8 +108,11 @@ POSTHOG_KEY = "phc_OP89N6nuHWu48k3n7j2fhFcA2y51GODeJGMJgRZgPbv"
 ANALYTICS = r"""<script>
 !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
 posthog.init("__KEY__",{api_host:"https://us.i.posthog.com",persistence:"memory",disable_session_recording:true,person_profiles:"identified_only",autocapture:true});
+posthog.register({app:"punchcutter",surface:"docs"});
+(function(){var q=new URLSearchParams(location.search),r=q.get("ref")||q.get("utm_source");if(r)posthog.capture("pc_docs_arrival",{ref:r,campaign:q.get("utm_campaign")||""});})();
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a)return;var h=a.getAttribute("href")||"";
-if(/\.(skill|pdf|zip)$|studio\.html|github\.com/.test(h))posthog.capture("punchcutter_link",{href:h,kind:/github/.test(h)?"github":/studio/.test(h)?"studio":"download"});});
+if(/\.(skill|pdf|zip)$|studio\.html|github\.com/.test(h))posthog.capture("pc_docs_link",{href:h,kind:/github/.test(h)?"github":/studio/.test(h)?"studio":"download"});});
+document.addEventListener("copy",function(){var s=String(getSelection()||"").slice(0,80);if(/punchcutter|pip install|claude |npx |mcp/.test(s))posthog.capture("pc_docs_install_copied",{snippet:s.split("\n")[0]});});
 </script>""".replace("__KEY__", POSTHOG_KEY)
 
 THEME_JS = """<script>
@@ -127,7 +131,7 @@ def head(title, desc, depth=""):
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}">
-<meta property="og:image" content="assets/social.jpg"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://byrishi.github.io/punchcutter/assets/social.jpg"><meta property="og:url" content="https://byrishi.github.io/punchcutter/"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="{brand.CREAM}">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css">{THEME_JS}{ANALYTICS}</head><body>"""
 
@@ -206,7 +210,7 @@ def index(families):
 <div class="row"><a class="btn pri" href="getting-started.html">Get started</a><a class="btn" href="fonts/PomeloRound/studio.html">See a Studio</a><a class="btn" href="{REPO}">GitHub</a></div>
 <small>Every letter on this page was cut by Punchcutter</small></header></div>
 
-<section class="s"><div class="wrap"><p class="cap">Five ways in</p><h2>Start with a sentence, a sheet of paper or a picture.</h2>
+<section class="s"><div class="wrap"><p class="cap">Six ways in</p><h2>Start with a sentence, a sheet of paper or a picture.</h2>
 <p class="lead">Open it and pick a route, or just say what you want. Every route ends with the same finished family and its Studio.</p>
 <div class="grid g5">{routes}</div></div></section>
 

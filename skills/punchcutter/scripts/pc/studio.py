@@ -115,6 +115,9 @@ def build_studio(result, qa=None, qa_lines=None):
     page = page.replace("__FAVICON__", base64.b64encode(brand.favicon_svg().encode()).decode())
     page = page.replace("__TITLE__", brand.esc(fam)).replace("__BRANDFONT__", _b64(brand.font_path("Regular")))
     page = page.replace("__BRANDBOLD__", _b64(brand.font_path("ExtraBold")))
+    from . import telemetry
+    snip = "" if spec.get("telemetry") is False else telemetry.studio_snippet()
+    page = page.replace("</body></html>", snip + "</body></html>") if "</body></html>" in page else page.replace("</body>", snip + "</body>")
     path = os.path.join(fonts, "studio.html")
     with open(path, "w") as f:
         f.write(page)
@@ -427,7 +430,7 @@ $('#foot').textContent=D.family+' v'+D.version+(D.designer?' · '+D.designer:'')
 // ---------------------------------------------------------------- downloads
 function bytes(){const b=atob(Z),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
 function save(blob,name){try{const u=URL.createObjectURL(blob);const l=el('a');l.href=u;l.download=name;document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Downloading '+name)}catch(e){toast('Downloads are blocked here. Open the file in a browser.')}}
-function family(){save(new Blob([bytes()],{type:'application/zip'}),D.id+'.zip')}
+function family(){window.pcTrack&&pcTrack('studio_download');save(new Blob([bytes()],{type:'application/zip'}),D.id+'.zip')}
 async function one(path){const a=bytes(),v=new DataView(a.buffer);let e=a.length-22;while(e>0&&v.getUint32(e,true)!==0x06054b50)e--;
  const n=v.getUint16(e+10,true);let p=v.getUint32(e+16,true);const want=D.id+'/'+path;
  for(let i=0;i<n;i++){const meth=v.getUint16(p+10,true),cs=v.getUint32(p+20,true),nl=v.getUint16(p+28,true),xl=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),off=v.getUint32(p+42,true);
@@ -455,7 +458,7 @@ if(!D.flex){$('#lab').remove();$('#navlab').remove()}else{
  Object.keys(LP).forEach(k=>{const b=el('button','',k);b.onclick=()=>{defs();Object.entries(LP[k]).forEach(([t,v])=>{if(AX.some(a=>a[0]===t))lv[t]=clamp(t,v)});$$('#lpre button').forEach(x=>x.classList.toggle('on',x===b));lapply()};$('#lpre').append(b)});
  $('#lreset').onclick=()=>{defs();$$('#lpre button').forEach(b=>b.classList.remove('on'));lapply()};
  $('#lrand').onclick=()=>{AX.forEach(([t,,mn,df,mx])=>{const r=Math.random(),k=t==='slnt'?(r<.7?0:mn*Math.random()):df+(r-.5)*(mx-mn)*.8;lv[t]=clamp(t,k)});$$('#lpre button').forEach(b=>b.classList.remove('on'));lapply()};
- $('#lcopy').onclick=()=>{if(D.flex.remix){const ax={};AX.forEach(([t,,,df])=>{if(t!=='wght'&&Math.round(lv[t])!==Math.round(df))ax[t]=Math.round(lv[t])});
+ $('#lcopy').onclick=()=>{window.pcTrack&&pcTrack('lab_copy',{remix:!!D.flex.remix});if(D.flex.remix){const ax={};AX.forEach(([t,,,df])=>{if(t!=='wght'&&Math.round(lv[t])!==Math.round(df))ax[t]=Math.round(lv[t])});
   return copy(`Cut a new version of ${D.family} with Punchcutter (remix of ${D.flex.base_name}) using these axis settings from the Design lab:\n\n"remix": {"axes": ${JSON.stringify(ax)}}\n\nMerge them into the existing remix axes, keep everything else the same and build the full family.`,'Settings copied. Paste them to your AI.')}
  const b=D.flex.base,sf=D.flex.stemf;const f=w=>{const ks=Object.keys(sf).map(Number).sort((x,y)=>x-y);for(let i=0;i<ks.length-1;i++)if(w>=ks[i]&&w<=ks[i+1])return sf[ks[i]]+(sf[ks[i+1]]-sf[ks[i]])*(w-ks[i])/(ks[i+1]-ks[i]);return w<ks[0]?sf[ks[0]]:sf[ks[ks.length-1]]};
   const g=t=>lv[t]===undefined?null:lv[t];const d={};

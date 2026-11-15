@@ -596,7 +596,7 @@ def trace_samples(samples, weights, ink=0.0, neat=0.5, log=print):
     return out
 
 
-def make_font_project(samples, family, out_dir, weights=(400,), ink=0.0, neat=0.5, designer="", log=print):
+def make_font_project(samples, family, out_dir, weights=(400,), ink=0.0, neat=0.5, designer="", log=print, route="handwriting"):
     """Trace samples and write traced.json plus a ready spec. Returns the spec path.
     ink: add (or remove, if negative) stroke weight in font units.
     neat: 0 keeps every bounce of the writing, 1 lines letters up like type."""
@@ -608,7 +608,7 @@ def make_font_project(samples, family, out_dir, weights=(400,), ink=0.0, neat=0.
     m = traced["metrics"]
     reg = traced["weights"].get("400") or next(iter(traced["weights"].values()))
     spec = dict(family=family, version="1.000", designer=designer, description=f"{family}, made from handwriting with Punchcutter.",
-                license="", mode="handwriting", traced="traced.json", weights=[int(w) for w in traced["weights"]],
+                license="", mode="handwriting", route=route, traced="traced.json", weights=[int(w) for w in traced["weights"]],
                 design=dict(cap=m["cap"], xh=m["xh"], asc=m["asc"], desc=m["desc"], stem=reg["stem"], terminal="round",
                             dot="round", contrast=0.0, hratio=1.0, cut="perp", cap_stem=1.0, spacing=1.0))
     spath = os.path.join(out_dir, family.replace(" ", "") + ".json")

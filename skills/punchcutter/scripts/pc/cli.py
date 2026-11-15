@@ -1,8 +1,9 @@
 """Punchcutter command line.
 
-  punchcutter menu                              the five ways to make a font
+  punchcutter menu                              the six ways to make a font
   punchcutter presets                           list the style presets
   punchcutter bases                             list open-source base fonts for route 6
+  punchcutter telemetry [on|off]                anonymous usage statistics
   punchcutter new "Family" --preset P           write a starter spec
   punchcutter build spec.json [--draft]         run the foundry pipeline
   punchcutter glyph spec.json a g R             close-up of single glyphs
@@ -32,22 +33,43 @@ def _names(token):
 
 def run_build(spec, out=None, draft=False, proof=True):
     """Build a family. Returns (out dir, fails, proof png or None)."""
+    import time
+    from . import telemetry
     from .build import build, load_spec
     from .release import release
-    fam = load_spec(spec)["family"].replace(" ", "")
+    sp = load_spec(spec)
+    fam = sp["family"].replace(" ", "")
     out = out or os.path.join("build", fam)
-    result = build(spec, out, formats=("ttf",) if draft else ("variable", "ttf", "otf", "woff2"))
-    fails = 0
-    if not draft:
-        fails, _ = release(result)
-    png = None
-    if proof:
-        from .proof import proof as make_proof
-        png = make_proof(result, os.path.join(out, "proof.svg"))[:-4] + ".png"
+    route, t0 = telemetry.route_of(sp), time.time()
+    telemetry.track("build_started", route=route, draft=draft, surface=telemetry.SURFACE["name"])
+    try:
+        result = build(spec, out, formats=("ttf",) if draft else ("variable", "ttf", "otf", "woff2"))
+        fails = 0
+        if not draft:
+            fails, _ = release(result)
+        png = None
+        if proof:
+            from .proof import proof as make_proof
+            png = make_proof(result, os.path.join(out, "proof.svg"))[:-4] + ".png"
+    except BaseException as e:
+        telemetry.track("build_failed", route=route, draft=draft, surface=telemetry.SURFACE["name"], error=type(e).__name__,
+                        seconds=round(time.time() - t0, 1))
+        raise
+    telemetry.track("build_completed", route=route, draft=draft, surface=telemetry.SURFACE["name"], qa_fails=fails,
+                    weights=len(result.get("weights", [])), seconds=round(time.time() - t0, 1),
+                    base=sp.get("base") or (sp.get("remix") or {}).get("base") if route == "open_base" else None)
     return out, fails, png
 
 
 def main(argv=None):
+    from . import telemetry
+    try:
+        return _main(argv)
+    finally:
+        telemetry.flush()
+
+
+def _main(argv=None):
     from . import brand
     argv = sys.argv[1:] if argv is None else list(argv)
     if argv[:1] == ["mcp"]:                      # the server has its own options
@@ -58,6 +80,8 @@ def main(argv=None):
     sub.add_parser("menu")
     sub.add_parser("presets")
     sub.add_parser("bases", help="list open-source base fonts for the remix route")
+    tl = sub.add_parser("telemetry", help="anonymous usage statistics: status, on or off")
+    tl.add_argument("state", nargs="?", choices=["status", "on", "off"], default="status")
     sub.add_parser("mcp", help="run as an MCP server (add --http for ChatGPT)")
     n = sub.add_parser("new")
     n.add_argument("family")
@@ -96,6 +120,13 @@ def main(argv=None):
 
     if a.cmd == "menu":
         print(brand.menu_text())
+        return 0
+    if a.cmd == "telemetry":
+        from . import telemetry
+        if a.state != "status":
+            telemetry.set_enabled(a.state == "on")
+        print(f"anonymous usage statistics: {'on' if telemetry.enabled() else 'off'}\n"
+              "what is sent and why: https://byrishi.github.io/punchcutter/privacy.html")
         return 0
     if a.cmd == "bases":
         from .remix import BASES
@@ -163,7 +194,8 @@ def main(argv=None):
         if len(samples) < 5:
             sys.exit("Too few characters were readable to make a font. Check the photo and try again.")
         out = a.out or a.family.replace(" ", "")
-        spec = hw.make_font_project(samples, a.family, out, weights, a.ink, a.neat, a.designer)
+        spec = hw.make_font_project(samples, a.family, out, weights, a.ink, a.neat, a.designer,
+                                    route="handwriting" if a.cmd == "read-sheet" else "photo")
         print(f"wrote {spec}\nnext: punchcutter build {spec} --draft")
         return 0
     if a.cmd == "build":

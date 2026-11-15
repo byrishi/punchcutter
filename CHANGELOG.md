@@ -11,8 +11,18 @@ All notable changes to Punchcutter. The format follows [Keep a Changelog](https:
 - Route 6, Open base: remix an SIL OFL variable font (Roboto Flex, Noto Sans and Serif, Inter, Fraunces, Recursive, Noto Sans Devanagari and Gujarati, or any OFL file) with pinned axes, tracking, slant and corner rounding; renamed and released under the OFL. `punchcutter bases` lists the catalog.
 - Stroke models (expansion and translation with a stress angle), ink traps and spur cleanup in the engine.
 
+- Anonymous, opt-out usage statistics (installs, builds, MCP tool calls with the AI client's name, Studio opens) so adoption can be measured apart from stars and downloads. `punchcutter telemetry off`, `PUNCHCUTTER_TELEMETRY=0` or `DO_NOT_TRACK=1` turn it off; it is off in CI and tests. See the privacy page.
+- Referral codes: `PUNCHCUTTER_REF` credits an install to a launch channel; docs links accept `?ref=`.
+- Daily GitHub snapshot workflow (stars, forks, release downloads and, with a token, traffic and referrers).
+- Privacy page in the docs; Kiln Sans in the docs gallery.
+
 ### Changed
 - QA no longer flags spaces and format characters as empty glyphs.
+- The packaged skill now ships as a release asset (`releases/latest/download/punchcutter.skill`) instead of a file in the repository.
+- Docs and menus describe all six routes; social previews use absolute image URLs.
+
+### Removed
+- Experimental launch-film renderers from `examples/`.
 - m keeps its middle stem straight up to the second shoulder, removing a dent at the join in heavy weights.
 
 ## [1.2.0] - 2026-11-14

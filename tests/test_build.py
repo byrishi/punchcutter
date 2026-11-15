@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import tempfile
+os.environ["PUNCHCUTTER_TELEMETRY"] = "0"   # never count test runs as usage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(ROOT, "skills", "punchcutter", "scripts")

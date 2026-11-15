@@ -1,6 +1,6 @@
 ---
-title: The five routes
-lede: Five ways into the foundry. Each ends with the same finished family and its Studio.
+title: The six routes
+lede: Six ways into the foundry. Each ends with the same finished family and its Studio.
 ---
 
 When you open Punchcutter without saying what you want, it shows a menu:
@@ -69,12 +69,25 @@ Change a font made with Punchcutter.
 
 For handwriting fonts, remixing changes neatness and ink weight.
 
+## 6. Open base
+
+Start from an SIL Open Font License variable font with wide script coverage and reshape it: pin any of its axes, add tracking, slant it, round the corners. Use it for scripts Punchcutter does not draw yet, such as Greek, Cyrillic, Vietnamese, Devanagari and Gujarati.
+
+| Base | Good for |
+| --- | --- |
+| `roboto-flex` | a grotesque with 13 parametric axes |
+| `noto-sans`, `noto-serif`, `noto-sans-mono` | Latin, Greek, Cyrillic, Vietnamese |
+| `inter`, `fraunces`, `recursive` | screen sans, soft display serif, casual to mono |
+| `noto-sans-devanagari`, `noto-sans-gujarati` | Indian scripts plus Latin |
+
+The result is a derivative: it ships under the OFL with the original credited and a new name. For a font you fully own, use route 1.
+
 ## What you get every time
 
 | File | What it is |
 | --- | --- |
-| `studio.html` | the font's own app: tester, glyph inspector, install guide, download |
-| `variable/` | one variable font with a weight axis (drawn fonts) |
+| `studio.html` | the font's own app: tester, Design lab, glyph inspector, kerning, photo mockups, install guide, download |
+| `variable/` | a weight-axis variable font, plus the Flex font with every Design lab axis |
 | `ttf/`, `otf/` | desktop fonts |
 | `webfonts/`, `<Family>.css` | WOFF2 and ready `@font-face` rules |
 | `proof.png` | the proof sheet |

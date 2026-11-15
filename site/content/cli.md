@@ -9,7 +9,7 @@ Run `punchcutter <command>` after installing with pip, or `python skills/punchcu
 
 | Command | What it does |
 | --- | --- |
-| `menu` | print the five routes |
+| `menu` | print the six routes |
 | `presets` | list presets and every design parameter with its default |
 | `new "Family" --preset P --weights 300,400,700` | write a starter spec |
 | `build spec.json` | the full pipeline: fonts, CSS, Studio, QA report |

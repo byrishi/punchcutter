@@ -114,7 +114,7 @@ Say "make me a font" or type `/punchcutter`.
 
 ### Claude app (web, desktop, mobile)
 
-1. Download [`punchcutter.skill`](dist/punchcutter.skill).
+1. Download [`punchcutter.skill`](https://github.com/byrishi/punchcutter/releases/latest/download/punchcutter.skill).
 2. In Claude: Settings, then Skills, then upload the file. Code execution must be on.
 3. Start a chat: "make me a font".
 
@@ -262,6 +262,10 @@ python tests/test_build.py
 ```
 
 Draws every preset at three weights and checks the masters are point-compatible, builds a family end to end with QA, turns a simulated angled phone photo of a filled sheet into a font, runs the quick-photo route, and checks the MCP server.
+
+## Privacy
+
+Punchcutter counts anonymous usage (installs, builds, MCP tool calls, Studio opens) so we can tell real use from stars. No fonts, text, images, file names or location are ever sent. Turn it off with `punchcutter telemetry off`, `PUNCHCUTTER_TELEMETRY=0` or `DO_NOT_TRACK=1`. Details: [privacy](https://byrishi.github.io/punchcutter/privacy.html).
 
 ## License
 
