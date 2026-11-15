@@ -1,6 +1,9 @@
-# Critique checklist
+---
+title: Critique checklist
+lede: How to read a proof, and which parameter fixes each problem. Punchcutter runs this list on every draft; you can too.
+---
 
-Look at `proof.png` with this list. For each problem, the usual fix follows.
+Open `proof.png` (or ask Punchcutter to show the proof) and go through this list. If you work in a chat, describe the problem in plain words instead, for example "the a looks clogged in Bold"; the fixes below are what Punchcutter will change. For each problem, the usual fix follows.
 
 ## Colour and rhythm (the text block)
 

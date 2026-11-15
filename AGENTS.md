@@ -12,9 +12,9 @@ and call it with `$punchcutter`.
 
 1. Install once: `pip install -r skills/punchcutter/scripts/requirements.txt`
 2. Read `skills/punchcutter/SKILL.md` and follow it. It is the full operating
-   manual: the menu, the five routes, the commands, the critique loop.
+   manual: the menu, the six routes, the commands, the critique loop.
 3. Commands are `python skills/punchcutter/scripts/punchcutter.py <command>`:
-   `menu`, `presets`, `new`, `build`, `glyph`, `sheet`, `read-sheet`, `segment`, `label`, `mcp`.
+   `menu`, `presets`, `bases`, `new`, `build`, `glyph`, `sheet`, `read-sheet`, `segment`, `label`, `mcp`, `telemetry`.
 
 If your client supports MCP, run the server instead and use its tools:
 `python skills/punchcutter/scripts/punchcutter.py mcp` (stdio), or add `--http` for remote

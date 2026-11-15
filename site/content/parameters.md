@@ -1,4 +1,7 @@
-# Design parameters
+---
+title: Design parameters
+lede: Every dial the engine has, with its default and what it does to the letters.
+---
 
 Put these under `"design"` in the spec. Units are font units (1000 per em).
 Anything you leave out comes from the preset, then from the defaults below.
@@ -21,6 +24,8 @@ Anything you leave out comes from the preset, then from the defaults below.
 | `cap_stem` | 1.08 | Capitals are this much heavier than lowercase. |
 | `hratio` | 0.9 | Horizontal stroke thickness relative to vertical, before contrast. |
 | `contrast` | 0.0 | Thick-thin contrast. 0 monoline, 0.15 humanist, 0.5 fashion display. |
+| `stress` | "expansion" | Stroke model. `"expansion"` (pointed pen) puts thick strokes on the verticals; `"translation"` (broad nib) gives diagonal stress, like a calligraphic serif. |
+| `stress_angle` | 0 | Tilts the stress axis, in degrees. 15 to 30 with `"translation"` feels written. |
 | `join` | 0.75 | Stroke thinning where curves meet stems (n, b, a). Lower is more sculpted. |
 
 ## Width and shape
@@ -38,6 +43,8 @@ Anything you leave out comes from the preset, then from the defaults below.
 | `cut` | "perp" | Terminal cut: `"h"` horizontal (neo-grotesque), `"v"` vertical, `"perp"` at right angles to the stroke. |
 | `terminal` | "flat" | `"round"` gives rounded stroke ends everywhere. |
 | `dot` | "round" | `"square"` for square i-dots and punctuation. |
+| `soften` | 0.07 | Rounds the outer corners. 0 is sharp, 0.32 is fully soft (the rounded preset). |
+| `inktrap` | 0 | Notches cut into sharp inner corners, in stems. 0.15 is subtle, 0.25 is deep. Helps heavy weights at small sizes. |
 | `serif` | "none" | `"slab"` adds slab serifs. |
 | `serif_len` | 0.95 | Slab length. |
 | `serif_weight` | 1.0 | Slab thickness relative to horizontal strokes. |

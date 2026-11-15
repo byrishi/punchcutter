@@ -149,4 +149,4 @@ The [CLI reference](cli.html) lists every command.
 > a calm grotesque for a fintech app, three weights, call it Ledger
 ```
 
-Punchcutter answers with its stages, shows you a proof, revises it, and ends with the Studio, the font files and a short list of next moves. That is the whole loop.
+Punchcutter answers with its stages, shows you a proof, revises it, and ends with the Studio, the font files and a short list of next moves. That is the whole loop. Next: [the six routes](routes.html), [handwriting and photos](handwriting.html), and [using your font](using.html).

@@ -1,4 +1,7 @@
-# Drawing custom glyphs
+---
+title: Drawing letters
+lede: Redraw any letter as pen strokes. The engine gives it the weight, contrast and spacing of the rest of the family.
+---
 
 A custom glyph file redraws any letter. Point the spec at it:
 `"glyphs": "my_glyphs.py"`. The build runs the file; each function decorated

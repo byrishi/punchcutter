@@ -11,12 +11,15 @@ Run `punchcutter <command>` after installing with pip, or `python skills/punchcu
 | --- | --- |
 | `menu` | print the six routes |
 | `presets` | list presets and every design parameter with its default |
+| `bases` | list the open-source base fonts for the open base route |
 | `new "Family" --preset P --weights 300,400,700` | write a starter spec |
 | `build spec.json` | the full pipeline: fonts, CSS, Studio, QA report |
 | `build spec.json --draft` | fast pass: static TTFs and the proof only |
+| `build spec.json --no-proof` | skip the proof image (faster in CI) |
 | `build spec.json --out DIR` | choose the output folder (default `build/<Family>`) |
 | `glyph spec.json a g R` | close-up image of letters at every master weight |
 | `glyph spec.json Q --outline` | outlines instead of filled shapes |
+| `glyph spec.json g --weight 700` | one weight only; `--out FILE` sets the image name |
 
 `build` exits with status 1 if a quality check fails, so it can gate a CI job.
 
@@ -47,7 +50,20 @@ Then build the project's spec like any other.
 
 | Command | What it does |
 | --- | --- |
-| `mcp` | run the MCP server on stdio |
+| `mcp` | run the MCP server on stdio, for Claude Desktop, Cursor, VS Code and Codex |
+| `mcp --http --public-url URL` | run it over HTTP for ChatGPT and other remote clients (port 8000) |
+
+See [Getting started](getting-started.html#chatgpt) for the ChatGPT setup.
+
+## Settings
+
+| Command | What it does |
+| --- | --- |
+| `telemetry` | show whether anonymous usage stats are on |
+| `telemetry off` | turn them off for good (`on` turns them back on) |
+| `--version` | print the installed version |
+
+See [Privacy and usage stats](privacy.html) for what is counted.
 
 ## The spec file
 

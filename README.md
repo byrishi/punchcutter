@@ -6,7 +6,7 @@
 
 **A type foundry that lives inside Claude, ChatGPT, Codex and other AI agents.** Describe a typeface, or write on a sheet of paper and send a photo. Punchcutter draws it, spaces it, kerns it, tests it and hands back a real font family with its own Studio app.
 
-Every word in the images on this page is set in a font Punchcutter made. **Docs: [byrishi.github.io/punchcutter](https://byrishi.github.io/punchcutter/)**
+Every word in the images on this page is set in a font Punchcutter made. **Docs: [byrishi.github.io/punchcutter](https://byrishi.github.io/punchcutter/)** · Guides: [Getting started](https://byrishi.github.io/punchcutter/getting-started.html) · [Handwriting and photos](https://byrishi.github.io/punchcutter/handwriting.html) · [Use your font](https://byrishi.github.io/punchcutter/using.html) · [CLI](https://byrishi.github.io/punchcutter/cli.html)
 
 <p align="center"><img src="assets/gallery.png" alt="Five families made with Punchcutter" width="100%"></p>
 

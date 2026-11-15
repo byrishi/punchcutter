@@ -1,0 +1,140 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use your font · Punchcutter</title><meta name="description" content="What is in the box, how to install it on every system, and how to use it in design apps and on the web.">
+<meta property="og:title" content="Use your font · Punchcutter"><meta property="og:description" content="What is in the box, how to install it on every system, and how to use it in design apps and on the web.">
+<meta property="og:image" content="https://byrishi.github.io/punchcutter/assets/social.jpg"><meta property="og:url" content="https://byrishi.github.io/punchcutter/"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f4efe4">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css"><script>
+(function(){var d=document.documentElement,t=null;try{t=localStorage.getItem('pc-theme')}catch(e){}if(t)d.dataset.theme=t;
+window.pcTheme=function(){var dark=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+d.dataset.theme=dark?'light':'dark';try{localStorage.setItem('pc-theme',d.dataset.theme)}catch(e){}}})();
+</script><script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init("phc_OP89N6nuHWu48k3n7j2fhFcA2y51GODeJGMJgRZgPbv",{api_host:"https://us.i.posthog.com",persistence:"memory",disable_session_recording:true,person_profiles:"identified_only",autocapture:true});
+posthog.register({app:"punchcutter",surface:"docs"});
+(function(){var q=new URLSearchParams(location.search),r=q.get("ref")||q.get("utm_source");if(r)posthog.capture("pc_docs_arrival",{ref:r,campaign:q.get("utm_campaign")||""});})();
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a)return;var h=a.getAttribute("href")||"";
+if(/\.(skill|pdf|zip)$|studio\.html|github\.com/.test(h))posthog.capture("pc_docs_link",{href:h,kind:/github/.test(h)?"github":/studio/.test(h)?"studio":"download"});});
+document.addEventListener("copy",function(){var s=String(getSelection()||"").slice(0,80);if(/punchcutter|pip install|claude |npx |mcp/.test(s))posthog.capture("pc_docs_install_copied",{snippet:s.split("\n")[0]});});
+</script></head><body><nav class="top"><div class="wrap"><a class="logo" href="index.html"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</a><span class="sp"></span><a class="l  on" href="getting-started.html">Docs</a><a class="l hide" href="index.html#gallery">Gallery</a><a class="l hide" href="brand.html">Brand</a><a class="l " href="https://github.com/byrishi/punchcutter">GitHub</a><button class="theme" onclick="pcTheme()" aria-label="Switch light and dark"><svg viewBox="0 0 20 20" width="16" height="16"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></svg></button></div></nav><div class="wrap doc"><aside class="side"><h4>Start</h4><a href="getting-started.html" class="">Getting started</a><a href="routes.html" class="">The six routes</a><a href="using.html" class="on">Use your font</a><h4>Guides</h4><a href="handwriting.html" class="">Handwriting and photos</a><a href="parameters.html" class="">Design parameters</a><a href="drawing.html" class="">Drawing letters</a><a href="critique.html" class="">Critique checklist</a><h4>Reference</h4><a href="agents.html" class="">Claude, MCP and agents</a><a href="cli.html" class="">CLI reference</a><a href="brand.html" class="">Brand</a><a href="privacy.html" class="">Privacy and usage stats</a><a href="faq.html" class="">FAQ and limits</a></aside><main class="prose"><h1>Use your font</h1><p class="lede">What is in the box, how to install it on every system, and how to use it in design apps and on the web.</p><p>Every route ends with the same release folder and its Studio. In the Claude app the Studio opens in the chat and the font downloads as a zip. In a terminal it lands in <code>build/&lt;Family&gt;/</code>.</p>
+<h2 id="what-you-get">What you get</h2>
+<p>Inside <code>build/&lt;Family&gt;/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fonts/studio.html</code></td>
+<td>the font's own app; open it in any browser, works offline</td>
+</tr>
+<tr>
+<td><code>fonts/otf/</code>, <code>fonts/ttf/</code></td>
+<td>desktop fonts, one file per weight</td>
+</tr>
+<tr>
+<td><code>fonts/variable/</code></td>
+<td>one file with every weight (drawn families only)</td>
+</tr>
+<tr>
+<td><code>fonts/webfonts/</code>, <code>fonts/&lt;Family&gt;.css</code></td>
+<td>WOFF2 files and ready <code>@font-face</code> rules</td>
+</tr>
+<tr>
+<td><code>fonts/README.md</code></td>
+<td>how to use it, with the license you chose</td>
+</tr>
+<tr>
+<td><code>proof.png</code></td>
+<td>the proof sheet</td>
+</tr>
+<tr>
+<td><code>report.md</code></td>
+<td>every stage and every quality check</td>
+</tr>
+<tr>
+<td><code>sources/</code></td>
+<td>UFO masters and a designspace for Glyphs, FontLab or RoboFont</td>
+</tr>
+<tr>
+<td><code>design.json</code></td>
+<td>the exact settings used, to rebuild or remix</td>
+</tr>
+</tbody>
+</table>
+<p>The zip from the Studio's Download button holds the fonts, CSS and README in one folder named after the family. The install steps below use that folder.</p>
+<h2 id="the-studio">The Studio</h2>
+<p>Open <code>studio.html</code>, or <a href="fonts/PomeloRound/studio.html">try one now</a>. It has:</p>
+<ul>
+<li><strong>Tester</strong>: type anything, change size, weight, tracking, line height, case and colours, switch OpenType features, and compare against Helvetica, Georgia or Times.</li>
+<li><strong>Design lab</strong>: sliders for weight, width, softness and more, live in the browser. Copy the settings back to Punchcutter to bake them into a new release.</li>
+<li><strong>Waterfall and weights</strong>: every size and every weight at once.</li>
+<li><strong>Glyphs</strong>: every character; click one to inspect it.</li>
+<li><strong>Kerning and languages</strong>: the pairs that were kerned, and the languages it covers.</li>
+<li><strong>Specs</strong>: files, quality checks and features.</li>
+<li><strong>Install</strong>: step-by-step guides for each system and app, and the download button.</li>
+</ul>
+<h2 id="install-on-your-computer">Install on your computer</h2>
+<p><strong>Mac</strong>: open the <code>otf</code> folder, select every file, double-click and choose Install. The font appears in every app after a restart of that app.</p>
+<p><strong>Windows</strong>: open the <code>otf</code> or <code>ttf</code> folder, select every file, right-click and choose Install (or "Install for all users").</p>
+<p><strong>Linux</strong>:</p>
+<pre><code class="language-bash">mkdir -p ~/.local/share/fonts
+cp MyFont/ttf/*.ttf ~/.local/share/fonts/
+fc-cache -f
+</code></pre>
+<p>Install either the static files or the variable file, not both, so apps do not show the font twice.</p>
+<h2 id="design-apps">Design apps</h2>
+<table>
+<thead>
+<tr>
+<th>App</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Figma</td>
+<td>install on your computer, then restart Figma (desktop app, or the font helper in the browser). Org plans can upload it as a shared font.</td>
+</tr>
+<tr>
+<td>Canva</td>
+<td>Brand Kit, then Brand fonts, then Upload a font, and choose the <code>otf</code> files (Canva Pro, Teams or Education).</td>
+</tr>
+<tr>
+<td>Word, Pages, Keynote</td>
+<td>install on your computer; it appears in the font menu.</td>
+</tr>
+<tr>
+<td>Photoshop, Illustrator, Affinity</td>
+<td>install on your computer; the variable file gives a live weight slider.</td>
+</tr>
+<tr>
+<td>Google Docs</td>
+<td>cannot load your own font files. Use it in Word or on the web instead.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="on-the-web">On the web</h2>
+<p>Copy the <code>webfonts</code> folder and <code>&lt;Family&gt;.css</code> into your site, then:</p>
+<pre><code class="language-html">&lt;link rel=&quot;stylesheet&quot; href=&quot;/fonts/MyFont.css&quot;&gt;
+&lt;style&gt;
+  body { font-family: &quot;My Font&quot;, system-ui, sans-serif; }
+  h1   { font-weight: 700; }
+&lt;/style&gt;
+</code></pre>
+<p>Variable families take any weight from the lightest to the heaviest: <code>font-weight: 560</code> works.</p>
+<p>In Next.js, use <code>next/font/local</code>:</p>
+<pre><code class="language-js">import localFont from &quot;next/font/local&quot;;
+export const myFont = localFont({ src: &quot;./fonts/MyFont[wght].woff2&quot;, weight: &quot;300 800&quot; });
+</code></pre>
+<p>Turn features on with CSS, for example tabular figures in a table:</p>
+<pre><code class="language-css">td { font-variant-numeric: tabular-nums; }
+.alt { font-feature-settings: &quot;ss01&quot;; }   /* the other form of a */
+</code></pre>
+<h2 id="change-it-later">Change it later</h2>
+<p>Go back to the same chat, or the same folder, and say what you want: "bolder", "a bit wider", "tighter spacing", "redo the g", "add a 900 weight", or for handwriting "cleaner" or "keep it messy". Punchcutter changes the spec and builds a new release. The version number goes up, so you can tell the files apart.</p>
+<p>In a terminal, edit the spec and run <code>punchcutter build</code> again. <a href="parameters.html">Design parameters</a> lists every setting.</p>
+<h2 id="share-it">Share it</h2>
+<p>You own fonts you make. The license in the spec is written into every file: Punchcutter suggests the SIL Open Font License if you want others to use it freely, or "All rights reserved" to keep it to yourself. Send the zip, or host the <code>studio.html</code> page so people can try the font before they download it.</p><div class="pn"><a href="routes.html"><small>Previous</small>The six routes</a><a href="handwriting.html" style="text-align:right"><small>Next</small>Handwriting and photos</a></div><p style="margin-top:28px;font-size:14px;color:var(--mute)"><a href="https://github.com/byrishi/punchcutter/edit/main/site/content/using.md">Edit this page</a></p></main></div><footer class="f"><div class="wrap"><span class="logo"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</span><span>A type foundry for Claude and other AI agents · v1.3.1</span><span><a href="getting-started.html">Docs</a> · <a href="https://github.com/byrishi/punchcutter">GitHub</a> · MIT license</span></div></footer></body></html>

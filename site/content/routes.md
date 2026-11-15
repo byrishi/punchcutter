@@ -13,6 +13,7 @@ When you open Punchcutter without saying what you want, it shows a menu:
   3  Quick photo        A photo of any writing or lettering. No sheet needed.
   4  Match a mood       Send a picture you love. Get an original family with that feeling.
   5  Remix              Change a Punchcutter font: weight, width, spacing, single letters.
+  6  Open base          Start from a free font with wide script coverage and reshape it.
 ```
 
 Pick a number, or just say what you want. If you attach a photo or write a brief, Punchcutter skips the menu.
@@ -40,7 +41,7 @@ The best way to turn your own writing into a font.
 
 Punchcutter squares up the photo from the corner squares, removes the red guides, traces each letter, and measures your x-height and stroke weight. Anything you did not write (accents, symbols, currency) is drawn at your stroke weight, so the font is complete. Page 1 is enough; page 2 adds figures and punctuation.
 
-You can then ask for changes in plain words: "neater", "keep it messy", "thicker", "add a bold". The full guide is [Handwriting](handwriting.html).
+You can then ask for changes in plain words: "neater", "keep it messy", "thicker", "add a bold". The full guide is [Handwriting and photos](handwriting.html).
 
 ## 3. Quick photo
 
@@ -93,3 +94,5 @@ The result is a derivative: it ships under the OFL with the original credited an
 | `proof.png` | the proof sheet |
 | `report.md` | every stage and every quality check |
 | `sources/` | UFO masters for Glyphs, FontLab or RoboFont |
+
+How to install and use these files is in [Use your font](using.html).

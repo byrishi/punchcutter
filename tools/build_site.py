@@ -22,7 +22,7 @@ OUT = os.path.join(ROOT, "docs")
 CONTENT = os.path.join(ROOT, "site", "content")
 REPO = "https://github.com/byrishi/punchcutter"
 
-NAV = [("Start", [("getting-started", "Getting started"), ("routes", "The six routes")]),
+NAV = [("Start", [("getting-started", "Getting started"), ("routes", "The six routes"), ("using", "Use your font")]),
        ("Guides", [("handwriting", "Handwriting and photos"), ("parameters", "Design parameters"),
                    ("drawing", "Drawing letters"), ("critique", "Critique checklist")]),
        ("Reference", [("agents", "Claude, MCP and agents"), ("cli", "CLI reference"), ("brand", "Brand"), ("privacy", "Privacy and usage stats"), ("faq", "FAQ and limits")])]
@@ -86,10 +86,10 @@ code{font:.88em ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--car
 footer.f{padding:48px 0 70px;color:var(--mute);font-size:14px}footer.f .wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 footer.f .logo{display:flex;gap:10px;align-items:center;font:20px Pomelo;color:var(--fg)}footer.f svg{width:26px;height:26px}
 /* docs */
-.doc{display:grid;grid-template-columns:230px minmax(0,1fr);gap:56px;padding:40px 0 80px}
+.doc{display:grid;grid-template-columns:230px minmax(0,1fr);gap:56px;padding-top:40px;padding-bottom:80px}
 .side{position:sticky;top:88px;align-self:start;font-size:15px}.side h4{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:22px 0 8px;font-weight:400}
 .side a{display:block;text-decoration:none;color:var(--mute);padding:5px 0}.side a.on,.side a:hover{color:var(--fg)}.side a.on{font-weight:800}
-.prose{max-width:760px}.prose h1{font-size:clamp(36px,5vw,56px);margin:0 0 12px}.prose .lede{font-size:20px;color:var(--mute);margin:0 0 34px}
+.prose{max-width:760px;min-width:0;overflow-wrap:anywhere}.prose h1{font-size:clamp(36px,5vw,56px);margin:0 0 12px}.prose .lede{font-size:20px;color:var(--mute);margin:0 0 34px}
 .prose h2{font-size:28px;margin:48px 0 12px;padding-top:12px}.prose h3{font-size:20px;margin:30px 0 8px}
 .prose table{width:100%;border-collapse:collapse;margin:0 0 22px;font-size:15px}.prose th,.prose td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
 .prose th{font-weight:800}.prose li{margin:4px 0}
@@ -100,7 +100,7 @@ footer.f .logo{display:flex;gap:10px;align-items:center;font:20px Pomelo;color:v
 .swatches div:before{content:"";display:block;height:84px;background:var(--c)}.swatches b,.swatches span,.swatches em{display:block;padding:0 14px}
 .swatches b{padding-top:10px}.swatches span{color:var(--mute);font-family:ui-monospace,monospace;font-size:13px}.swatches em{font-style:normal;color:var(--mute);padding-bottom:12px;font-size:13px}
 .theme{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;width:36px;height:36px;display:grid;place-items:center;padding:0}
-@media(max-width:860px){.doc{grid-template-columns:1fr}.side{position:static;display:flex;flex-wrap:wrap;gap:0 18px}.side h4{width:100%}nav.top a.l.hide{display:none}.g2{grid-template-columns:1fr}}
+@media(max-width:860px){.doc{grid-template-columns:minmax(0,1fr)}.prose table{display:block;overflow-x:auto}.prose td code{white-space:nowrap}.side{position:static;display:flex;flex-wrap:wrap;gap:0 18px}.side h4{width:100%}nav.top a.l.hide{display:none}.g2{grid-template-columns:1fr}}
 """
 
 # Privacy-friendly analytics: no cookies, no session recording, no personal data.
@@ -229,8 +229,8 @@ def index(families):
 <figure><img src="assets/demo-plain-paper-found.jpg" alt="Characters found and numbered on a photo of plain paper" loading="lazy"><figcaption>Plain notebook paper, every character found and numbered.</figcaption></figure></div>
 </div></section>
 
-<section class="s" id="gallery"><div class="wrap"><p class="cap">Gallery</p><h2>Five families, each made from one sentence.</h2>
-<p class="lead">Type below to set it in all five. Open any family to try its Studio: the app every Punchcutter font ships with.</p>
+<section class="s" id="gallery"><div class="wrap"><p class="cap">Gallery</p><h2>Six families: five from one sentence, one remixed from an open base.</h2>
+<p class="lead">Type below to set it in all six. Open any family to try its Studio: the app every Punchcutter font ships with.</p>
 <input class="tester" id="tt" value="" placeholder="Type something…" aria-label="Sample text">{fams}</div></section>
 
 <section class="s"><div class="wrap"><p class="cap">How it works</p><h2>The stages of a real type foundry, in a minute or two.</h2>

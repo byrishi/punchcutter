@@ -76,6 +76,7 @@ def _main(argv=None):
         from .mcp_server import main as serve
         return serve(argv[1:])
     ap = argparse.ArgumentParser(prog="punchcutter", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--version", action="version", version="punchcutter " + brand.VERSION)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("menu")
     sub.add_parser("presets")

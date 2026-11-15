@@ -37,7 +37,11 @@ Yes: TTF and OTF for desktop apps, WOFF2 for the web. Outlines are unhinted, whi
 
 ## Does anything get uploaded?
 
-No. Everything runs on your machine, or in Claude's own sandbox when you use the Claude app. Photos stay where they are.
+Your fonts, text and photos never leave your machine, or Claude's own sandbox when you use the Claude app. Punchcutter sends a few anonymous usage counts (a build started, a Studio opened) with no content in them. [Privacy and usage stats](privacy.html) lists every one; `punchcutter telemetry off` stops them.
+
+## How do I update Punchcutter?
+
+Run the same install command again: `/plugin update punchcutter` in Claude Code, `npx skills add byrishi/punchcutter` for the skill, or `pip install -U "git+https://github.com/byrishi/punchcutter"` for the CLI and MCP server. In the Claude app, download the latest `punchcutter.skill` and upload it again. `punchcutter --version` shows what you have.
 
 ## Where do I report a bug?
 
