@@ -1,0 +1,20 @@
+name: Bug
+description: Something broke or a font came out wrong
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened
+      description: What you asked for, what you got, and what you expected.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Where
+      options: [Claude Code, Claude app, ChatGPT, Codex, Cursor or other MCP client, Command line]
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Files
+      description: Attach the spec JSON, proof.png and report.md if you have them. For photo routes, the photo helps a lot.

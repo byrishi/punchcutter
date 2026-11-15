@@ -1,0 +1,11 @@
+{
+  "family": "Semaphore Condensed",
+  "version": "1.000",
+  "designer": "Punchcutter",
+  "description": "Tall, narrow and loud. A condensed sans for posters, scoreboards and headlines that need to fit.",
+  "license": "SIL Open Font License 1.1",
+  "license_url": "https://openfontlicense.org",
+  "preset": "condensed",
+  "weights": [400, 600, 800],
+  "design": {}
+}

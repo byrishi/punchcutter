@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "punchcutter"
+version = "1.3.1"
+description = "A type foundry for Claude and other AI agents. Describe a typeface, get a font family."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Rishi Shah" }]
+requires-python = ">=3.10"
+keywords = ["fonts", "typography", "type design", "handwriting", "mcp", "claude"]
+dependencies = [
+  "fonttools>=4.50", "fontmake>=3.9", "ufoLib2>=0.16", "skia-pathops>=0.8", "uharfbuzz>=0.39",
+  "numpy>=1.24", "brotli>=1.1", "cairosvg>=2.7", "opencv-python-headless>=4.8", "potracer>=0.0.4",
+  "pillow>=10", "pypdf>=4",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+
+[project.urls]
+Homepage = "https://github.com/byrishi/punchcutter"
+
+[project.scripts]
+punchcutter = "pc.cli:main"
+punchcutter-mcp = "pc.mcp_server:main"
+
+[tool.setuptools]
+package-dir = { "pc" = "skills/punchcutter/scripts/pc" }
+packages = ["pc"]
+
+[tool.setuptools.package-data]
+pc = ["brand_fonts/*.ttf", "assets/mockups/*.jpg"]

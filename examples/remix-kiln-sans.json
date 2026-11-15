@@ -1,0 +1,12 @@
+{
+  "family": "Kiln Sans",
+  "mode": "remix",
+  "base": "roboto-flex",
+  "designer": "Punchcutter",
+  "description": "A compact, tall-x grotesque remixed from Roboto Flex: tighter counters, bigger lowercase, a touch of extra tracking for signage.",
+  "weights": [300, 400, 500, 700, 900],
+  "remix": {
+    "axes": {"wdth": 88, "YTLC": 545, "XTRA": 440, "opsz": 36, "GRAD": 20},
+    "tracking": 8
+  }
+}

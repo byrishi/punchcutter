@@ -1,0 +1,6 @@
+interface:
+  display_name: "Punchcutter"
+  short_description: "Make original font families from a brief or your handwriting"
+  icon_small: "./assets/punchcutter-small.svg"
+  icon_large: "./assets/punchcutter.png"
+  default_prompt: "Use $punchcutter to make me a font. Show the menu first."

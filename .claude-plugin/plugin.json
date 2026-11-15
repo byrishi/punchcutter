@@ -1,0 +1,10 @@
+{
+  "name": "punchcutter",
+  "description": "A type foundry inside Claude. Make original font families from a brief, your handwriting, a photo or a mood image.",
+  "version": "1.3.1",
+  "author": { "name": "Rishi Shah", "url": "https://github.com/byrishi" },
+  "homepage": "https://github.com/byrishi/punchcutter",
+  "repository": "https://github.com/byrishi/punchcutter",
+  "license": "MIT",
+  "keywords": ["fonts", "typography", "type-design", "handwriting", "design"]
+}

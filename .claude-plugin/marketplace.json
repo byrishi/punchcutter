@@ -1,0 +1,11 @@
+{
+  "name": "punchcutter",
+  "owner": { "name": "Rishi Shah", "url": "https://github.com/byrishi" },
+  "plugins": [
+    {
+      "name": "punchcutter",
+      "source": "./",
+      "description": "A type foundry inside Claude. Make original font families from a brief, your handwriting, a photo or a mood image."
+    }
+  ]
+}

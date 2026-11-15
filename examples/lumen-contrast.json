@@ -1,0 +1,11 @@
+{
+  "family": "Lumen Contrast",
+  "version": "1.000",
+  "designer": "Punchcutter",
+  "description": "A high-contrast sans for display sizes: hairline horizontals against firm verticals.",
+  "license": "SIL Open Font License 1.1",
+  "license_url": "https://openfontlicense.org",
+  "preset": "contrast",
+  "weights": [400, 700],
+  "design": {}
+}

@@ -1,0 +1,9 @@
+name: Idea
+description: A feature, a script, a style you want
+labels: [idea]
+body:
+  - type: textarea
+    attributes:
+      label: What would you like
+    validations:
+      required: true

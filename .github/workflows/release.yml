@@ -1,0 +1,61 @@
+# Releases punchcutter. Runs when the version in pyproject.toml changes on main (or a
+# v* tag is pushed): if that version has no release yet, it builds the Python package and
+# punchcutter.skill and publishes a GitHub release with the CHANGELOG notes.
+# PyPI publishing runs once the repository variable PUBLISH_PYPI is set to "true" and a
+# trusted publisher is configured on pypi.org.
+name: release
+on:
+  push:
+    branches: [main]
+    paths: ["pyproject.toml", ".github/workflows/release.yml"]
+    tags: ["v*"]
+  workflow_dispatch:
+jobs:
+  github:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.check.outputs.new }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: check
+        run: |
+          v=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1; then echo "new=false" >> "$GITHUB_OUTPUT"; else echo "new=true" >> "$GITHUB_OUTPUT"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: steps.check.outputs.new == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: steps.check.outputs.new == 'true'
+        run: |
+          pip install build && python -m build
+          cd skills && zip -qr ../punchcutter.skill punchcutter -x "*/__pycache__/*" && cd ..
+          v=${{ steps.check.outputs.version }}
+          awk -v v="$v" '$0 ~ "^## \\["v"\\]"{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > notes.md
+          gh release create "v$v" --target "$GITHUB_SHA" --title "punchcutter $v" --notes-file notes.md punchcutter.skill dist/*
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: steps.check.outputs.new == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  pypi:
+    needs: github
+    if: needs.github.outputs.released == 'true' && vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

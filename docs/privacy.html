@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy and usage stats · Punchcutter</title><meta name="description" content="What Punchcutter counts, why, and how to turn it off in one line.">
+<meta property="og:title" content="Privacy and usage stats · Punchcutter"><meta property="og:description" content="What Punchcutter counts, why, and how to turn it off in one line.">
+<meta property="og:image" content="https://byrishi.github.io/punchcutter/assets/social.jpg"><meta property="og:url" content="https://byrishi.github.io/punchcutter/"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f4efe4">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css"><script>
+(function(){var d=document.documentElement,t=null;try{t=localStorage.getItem('pc-theme')}catch(e){}if(t)d.dataset.theme=t;
+window.pcTheme=function(){var dark=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+d.dataset.theme=dark?'light':'dark';try{localStorage.setItem('pc-theme',d.dataset.theme)}catch(e){}}})();
+</script><script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init("phc_OP89N6nuHWu48k3n7j2fhFcA2y51GODeJGMJgRZgPbv",{api_host:"https://us.i.posthog.com",persistence:"memory",disable_session_recording:true,person_profiles:"identified_only",autocapture:true});
+posthog.register({app:"punchcutter",surface:"docs"});
+(function(){var q=new URLSearchParams(location.search),r=q.get("ref")||q.get("utm_source");if(r)posthog.capture("pc_docs_arrival",{ref:r,campaign:q.get("utm_campaign")||""});})();
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a)return;var h=a.getAttribute("href")||"";
+if(/\.(skill|pdf|zip)$|studio\.html|github\.com/.test(h))posthog.capture("pc_docs_link",{href:h,kind:/github/.test(h)?"github":/studio/.test(h)?"studio":"download"});});
+document.addEventListener("copy",function(){var s=String(getSelection()||"").slice(0,80);if(/punchcutter|pip install|claude |npx |mcp/.test(s))posthog.capture("pc_docs_install_copied",{snippet:s.split("\n")[0]});});
+</script></head><body><nav class="top"><div class="wrap"><a class="logo" href="index.html"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</a><span class="sp"></span><a class="l  on" href="getting-started.html">Docs</a><a class="l hide" href="index.html#gallery">Gallery</a><a class="l hide" href="brand.html">Brand</a><a class="l " href="https://github.com/byrishi/punchcutter">GitHub</a><button class="theme" onclick="pcTheme()" aria-label="Switch light and dark"><svg viewBox="0 0 20 20" width="16" height="16"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.5a7.5 7.5 0 0 1 0 15z" fill="currentColor"/></svg></button></div></nav><div class="wrap doc"><aside class="side"><h4>Start</h4><a href="getting-started.html" class="">Getting started</a><a href="routes.html" class="">The six routes</a><h4>Guides</h4><a href="handwriting.html" class="">Handwriting and photos</a><a href="parameters.html" class="">Design parameters</a><a href="drawing.html" class="">Drawing letters</a><a href="critique.html" class="">Critique checklist</a><h4>Reference</h4><a href="agents.html" class="">Claude, MCP and agents</a><a href="cli.html" class="">CLI reference</a><a href="brand.html" class="">Brand</a><a href="privacy.html" class="on">Privacy and usage stats</a><a href="faq.html" class="">FAQ and limits</a></aside><main class="prose"><h1>Privacy and usage stats</h1><p class="lede">What Punchcutter counts, why, and how to turn it off in one line.</p><p>Punchcutter is free and open source. To know whether people actually use it (not just star it), it sends a few <strong>anonymous</strong> events. They never contain your fonts, text, images, file names, prompts or location.</p>
+<h2 id="what-is-counted">What is counted</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>installed</code></td>
+<td>the first time Punchcutter runs on a machine</td>
+</tr>
+<tr>
+<td><code>build_started</code>, <code>build_completed</code>, <code>build_failed</code></td>
+<td>a font build, with the route, draft or release, duration and error type</td>
+</tr>
+<tr>
+<td><code>tool_called</code>, <code>mcp_started</code></td>
+<td>the MCP server is used, with the AI client's name (for example Claude Desktop or Cursor)</td>
+</tr>
+<tr>
+<td><code>studio_opened</code>, <code>studio_download</code>, <code>lab_copy</code>, <code>mockup_download</code></td>
+<td>someone opens or uses a font's Studio app</td>
+</tr>
+</tbody>
+</table>
+<p>Each event carries a random install id made on your machine, the Punchcutter version, your OS family and Python version. There are no person profiles and no IP-based location.</p>
+<p>The documentation site counts page views without cookies.</p>
+<h2 id="turn-it-off">Turn it off</h2>
+<p>Any one of these switches it off for good:</p>
+<pre><code>punchcutter telemetry off
+export PUNCHCUTTER_TELEMETRY=0
+export DO_NOT_TRACK=1
+</code></pre>
+<p>It is already off in CI and in the test suite. Add <code>"telemetry": false</code> to a spec to build a Studio with no tracking at all. The code is in <a href="https://github.com/byrishi/punchcutter/blob/main/skills/punchcutter/scripts/pc/telemetry.py"><code>telemetry.py</code></a>.</p>
+<h2 id="referral-codes">Referral codes</h2>
+<p>Links shared on launch platforms carry <code>?ref=</code> (for example <code>?ref=producthunt</code>). To credit an install to a source, set <code>PUNCHCUTTER_REF</code> once:</p>
+<pre><code>PUNCHCUTTER_REF=producthunt punchcutter menu
+</code></pre><div class="pn"><a href="brand.html"><small>Previous</small>Brand</a><a href="faq.html" style="text-align:right"><small>Next</small>FAQ and limits</a></div><p style="margin-top:28px;font-size:14px;color:var(--mute)"><a href="https://github.com/byrishi/punchcutter/edit/main/site/content/privacy.md">Edit this page</a></p></main></div><footer class="f"><div class="wrap"><span class="logo"><svg class="" viewBox="0 0 100 100" aria-hidden="true"><rect x="0.000" y="0.000" width="100.000" height="100.000" rx="24.000" fill="#5f6b2f"/><path transform="translate(16.000 16.000) scale(0.68000)" d="M71.83 35.28C70.72 22.81 59.46 14.69 43.69 14.98C32.42 15.19 25.14 24.05 25.50 37.15C25.87 50.74 37.49 60.27 54.55 60.97C66.34 61.45 73.25 51.18 71.83 35.28Z M58.88 36.43C59.51 43.48 57.99 48.10 55.09 47.98C45.30 47.58 38.66 43.10 38.49 36.79C38.35 31.57 40.52 28.04 43.93 27.98C52.44 27.82 58.42 31.21 58.88 36.43Z M19.39 19.20L29.48 52.84L38.53 91.43C39.38 95.06 43.01 97.31 46.64 96.46C50.27 95.61 52.52 91.97 51.67 88.34L42.53 49.36L32.32 15.32C31.25 11.75 27.49 9.72 23.91 10.79C20.34 11.86 18.32 15.63 19.39 19.20Z M86.10 19.50L86.10 4.50C86.10 3.34 85.16 2.40 84.00 2.40C82.84 2.40 81.90 3.34 81.90 4.50L81.90 19.50C81.90 20.66 82.84 21.60 84.00 21.60C85.16 21.60 86.10 20.66 86.10 19.50Z M77.00 14.10L91.00 14.10C92.16 14.10 93.10 13.16 93.10 12.00C93.10 10.84 92.16 9.90 91.00 9.90L77.00 9.90C75.84 9.90 74.90 10.84 74.90 12.00C74.90 13.16 75.84 14.10 77.00 14.10Z M82.30 16.67L88.67 10.30C89.49 9.48 89.49 8.15 88.67 7.33C87.85 6.51 86.52 6.51 85.70 7.33L79.33 13.70C78.51 14.52 78.51 15.85 79.33 16.67C80.15 17.49 81.48 17.49 82.30 16.67Z M88.67 13.70L82.30 7.33C81.48 6.51 80.15 6.51 79.33 7.33C78.51 8.15 78.51 9.48 79.33 10.30L85.70 16.67C86.52 17.49 87.85 17.49 88.67 16.67C89.49 15.85 89.49 14.52 88.67 13.70Z" fill="#ffffff" fill-rule="nonzero"/></svg>punchcutter</span><span>A type foundry for Claude and other AI agents · v1.3.1</span><span><a href="getting-started.html">Docs</a> · <a href="https://github.com/byrishi/punchcutter">GitHub</a> · MIT license</span></div></footer></body></html>
